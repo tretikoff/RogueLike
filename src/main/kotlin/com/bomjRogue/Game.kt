@@ -2,11 +2,15 @@ package com.bomjRogue
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
+import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import ktx.app.KtxApplicationAdapter
 import ktx.app.clearScreen
+import ktx.assets.getAsset
+import ktx.assets.load
 import ktx.graphics.use
 
 
@@ -46,7 +50,10 @@ interface GameObject {
 
 class Game : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
+    private val manager = AssetManager()
     private lateinit var spriteBatch: SpriteBatch
+    private lateinit var playerSprite: Texture
+    private lateinit var npcSprite: Texture
     private val mainPlayer = Player(
         "player", Characteristics(
             mutableMapOf(
@@ -61,6 +68,11 @@ class Game : KtxApplicationAdapter {
     private var npcs = mutableListOf<Player>()
 
     override fun create() {
+        manager.load<Texture>("player.png").finishLoading()
+        manager.load<Texture>("SteamMan.png").finishLoading()
+        playerSprite = manager.getAsset("player.png")
+        npcSprite = manager.getAsset("SteamMan.png")
+
         mainPlayer.reset()
         map.add(mainPlayer, Coordinates(5f, 5f))
         renderer = ShapeRenderer()
@@ -133,20 +145,22 @@ class Game : KtxApplicationAdapter {
 
     private fun draw() {
         clearScreen(0f, 0f, 0f, 0f)
-
         renderer.use(ShapeRenderer.ShapeType.Filled) {
             renderer.color = Color.GRAY
-            npcs.forEach {
-                val position = map.getPosition(it)
-                renderer.rect(position.xCoordinate, position.yCoordinate, 10f, 80f)
-            }
+                renderer.rect(0f, 0f, 1280f, 720f)
         }
 
-
-        renderer.use(ShapeRenderer.ShapeType.Filled) {
-            renderer.color = Color.RED
-            val position = map.getPosition(mainPlayer)
-            renderer.rect(position.xCoordinate, position.yCoordinate, 10f, 80f)
+        spriteBatch.begin()
+        for (npc in npcs) {
+            renderNpc(npc)
         }
+        val coordinates = map.getPosition(mainPlayer)
+        spriteBatch.draw(playerSprite, coordinates.xCoordinate, coordinates.yCoordinate)
+        spriteBatch.end()
+    }
+
+    private fun renderNpc(npc: Player) {
+        val coordinates = map.getPosition(npc)
+        spriteBatch.draw(npcSprite, coordinates.xCoordinate, coordinates.yCoordinate)
     }
 }
