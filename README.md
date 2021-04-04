@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Rougelike
 ---
 ## Общие сведения о системе
@@ -49,6 +48,4 @@
 
 ## Уточнение классами 
 ![Class Diagram](diagrams/class.png)
-=======
-# rougelike
->>>>>>> 160daf330f47fd3585a700dd53a00c3c79f7eaa4
+
