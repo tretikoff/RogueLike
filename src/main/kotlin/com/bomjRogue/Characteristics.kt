@@ -3,7 +3,7 @@ package com.bomjRogue
 enum class CharacteristicType {
     Health,
     Force,
-    Armor
+    Armor,
 }
 typealias CharacteristicsMap = MutableMap<CharacteristicType, Int>
 
@@ -15,6 +15,10 @@ class Characteristics(private val defaults: CharacteristicsMap) {
 
     fun updateCharacteristic(type: CharacteristicType, value: Int) {
         characteristics[type] = characteristics[type]!! + value
+    }
+
+    fun setCharacteristic(type: CharacteristicType, value: Int) {
+        characteristics[type] = value
     }
 
     fun getCharacteristic(type: CharacteristicType): Int {

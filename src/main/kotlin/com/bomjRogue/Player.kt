@@ -1,6 +1,7 @@
 package com.bomjRogue
 
 import kotlin.math.max
+import kotlin.math.min
 
 open class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
     override fun update() {
@@ -21,6 +22,14 @@ open class Player(private val name: String, private val characteristics: Charact
 
     fun getHealth(): Int {
         return characteristics.getCharacteristic(CharacteristicType.Health)
+    }
+
+    fun addHealth(health: Int) {
+        characteristics.setCharacteristic(CharacteristicType.Health, min(getHealth() + health, 100))
+    }
+
+    fun addForce(force: Int) {
+        characteristics.updateCharacteristic(CharacteristicType.Force, force)
     }
 
     fun hit() {
