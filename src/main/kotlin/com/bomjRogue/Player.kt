@@ -2,7 +2,7 @@ package com.bomjRogue
 
 import kotlin.math.max
 
-class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
+open class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
     override fun update() {
 //        TODO("Not yet implemented")
     }
