@@ -10,7 +10,7 @@ class Map: GameObject {
     }
 
     fun addRandomPlace(obj: GameObject) {
-        add(obj, Coordinates((40..1200).random().toFloat(), (40..700).random().toFloat()))
+        add(obj, Coordinates((40..650).random().toFloat(), (40..650).random().toFloat()))
     }
 
     fun getPosition(obj: GameObject): Coordinates {
