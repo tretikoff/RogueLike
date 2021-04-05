@@ -9,6 +9,10 @@ class Map: GameObject {
         location[obj] = position
     }
 
+    fun addRandomPlace(obj: GameObject) {
+        add(obj, Coordinates((40..1200).random().toFloat(), (40..700).random().toFloat()))
+    }
+
     fun getPosition(obj: GameObject): Coordinates {
         return location[obj]!!
     }
@@ -20,11 +24,18 @@ class Map: GameObject {
 
     fun move(obj: GameObject, x: Float, y: Float) {
         val old = location[obj]!!
-        location[obj] = Coordinates(old.xCoordinate + x, old.yCoordinate + y)
+        val newCoordinates = Coordinates(old.xCoordinate + x, old.yCoordinate + y)
+        if (newCoordinates.valid()) {
+            location[obj] = newCoordinates
+        }
     }
 
     fun remove(obj: GameObject) {
         location.remove(obj)
+    }
+
+    fun reset() {
+        location.clear()
     }
 
     override fun update() {
