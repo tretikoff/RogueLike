@@ -23,7 +23,7 @@ class Map: GameObject {
     }
 
     fun move(obj: GameObject, x: Float, y: Float) {
-        val old = location[obj]!!
+        val old = location[obj] ?: return
         val newCoordinates = Coordinates(old.xCoordinate + x, old.yCoordinate + y)
         if (newCoordinates.valid()) {
             location[obj] = newCoordinates

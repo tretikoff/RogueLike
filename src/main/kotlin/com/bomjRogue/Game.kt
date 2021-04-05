@@ -16,6 +16,8 @@ import ktx.app.clearScreen
 import ktx.assets.getAsset
 import ktx.assets.load
 import ktx.graphics.use
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.random.Random
 
 
@@ -40,6 +42,8 @@ class Game : KtxApplicationAdapter {
     private lateinit var swordSprite: Texture
     private lateinit var healthSprite: Texture
 
+    private lateinit var music: Sound
+    private var volume = 0.0f
     private lateinit var hitBodySound: Sound
     private lateinit var swordGetSound: Sound
     private lateinit var hitSound: Sound
@@ -52,17 +56,18 @@ class Game : KtxApplicationAdapter {
             )
         )
     )
-    private val npcCount = 5
+    private var npcCount = 5
     private val map = Map()
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
 
     override fun create() {
         loadAssets()
+        // TODO reinitialize properly
         initialize()
     }
 
-    private inline fun <reified T : Any>load(path: String): T {
+    private inline fun <reified T : Any> load(path: String): T {
         manager.load<T>(path).finishLoading()
         return manager.getAsset(path)
     }
@@ -73,26 +78,34 @@ class Game : KtxApplicationAdapter {
         npcSprite = load("SteamMan.png")
         swordSprite = load("sword.png")
         healthSprite = load("health.png")
-        load<Sound>("sound.mp3").loop()
+// Replace if your PC is strong enough
+//        load<Sound>("sound.mp3").loop()
+        music = load("sound_light.mp3")
         hitBodySound = load("hit_body.mp3")
         swordGetSound = load("sword_get.mp3")
         hitSound = load("hit.mp3")
+        music.loop()
     }
 
     private fun initialize() {
-        map.reset()
-        mainPlayer.reset()
-        map.add(mainPlayer, Coordinates(5f, 5f))
         renderer = ShapeRenderer()
         spriteBatch = SpriteBatch()
+        map.reset()
         initializeNpcs()
         initializeItems()
+        mainPlayer.reset()
+        map.add(mainPlayer, Coordinates(5f, 5f))
     }
 
     override fun render() {
         handleInput()
-        logic()
-        draw()
+        try {
+            logic()
+            draw()
+            // TODO stop rerender when initializing
+        } catch (e: ConcurrentModificationException) {
+            return
+        }
     }
 
     private fun initializeItems() {
@@ -140,7 +153,12 @@ class Game : KtxApplicationAdapter {
         map.move(mainPlayer, x, y)
         if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             makeDamage(mainPlayer)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
+            volume = max(volume - 0.05f, 0f)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
+            volume = min(volume + 0.05f, 1f)
         }
+        music.setVolume(0, volume)
     }
 
     private fun makeDamage(hitman: Player) {
@@ -166,7 +184,9 @@ class Game : KtxApplicationAdapter {
 
     private fun logic() {
         if (npcs.isEmpty()) {
+            npcCount++
             initializeNpcs()
+            initializeItems()
         }
         for (npc in npcs) {
             if (map.objectsConnect(npc, mainPlayer)) {
@@ -215,7 +235,10 @@ class Game : KtxApplicationAdapter {
 
     private fun drawInfo() {
         val font = BitmapFont()
-        textLayout.setText(font, "ASDW or arrow keys to move, ENTER or F to hit")
+        textLayout.setText(
+            font,
+            "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
+        )
         font.draw(spriteBatch, textLayout, 950f, 710f)
     }
 
@@ -256,12 +279,12 @@ class Game : KtxApplicationAdapter {
 
     private fun renderItem(item: Item) {
         val coordinates = map.getPosition(item)
-        // TODO store game object information, such as size and sprite, inside object itself
+        // TODO store game object information, such as size and sprite, inside game object itself
         if (item is Health) {
             spriteBatch.draw(healthSprite, coordinates.xCoordinate, coordinates.yCoordinate, 25f, 25f)
         } else if (item is Weapon) {
             spriteBatch.draw(swordSprite, coordinates.xCoordinate, coordinates.yCoordinate, 40f, 40f)
         }
-        // TODO render health for a player
+        // TODO render health for a npc
     }
 }
