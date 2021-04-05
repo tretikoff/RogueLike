@@ -8,9 +8,9 @@ enum class CharacteristicType {
 typealias CharacteristicsMap = MutableMap<CharacteristicType, Int>
 
 class Characteristics(private val defaults: CharacteristicsMap) {
-    private var characteristics: MutableMap<CharacteristicType, Int> = defaults
+    private var characteristics: MutableMap<CharacteristicType, Int> = HashMap(defaults)
     fun reset() {
-        characteristics = defaults
+        characteristics = HashMap(defaults)
     }
 
     fun updateCharacteristic(type: CharacteristicType, value: Int) {
