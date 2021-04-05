@@ -6,8 +6,11 @@ import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Texture
+import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.utils.Pools
 import ktx.app.KtxApplicationAdapter
 import ktx.app.clearScreen
 import ktx.assets.getAsset
@@ -18,7 +21,7 @@ import kotlin.random.Random
 
 class Coordinates(val xCoordinate: Float, val yCoordinate: Float) {
     fun valid(): Boolean {
-        return xCoordinate > 0 && yCoordinate > 0 && xCoordinate < 1280 && yCoordinate < 720
+        return xCoordinate > 0 && yCoordinate > 0 && xCoordinate < 1280 && yCoordinate < 650
     }
 }
 
@@ -28,12 +31,18 @@ interface GameObject {
 
 class Game : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
-    private val manager = AssetManager()
     private lateinit var spriteBatch: SpriteBatch
+    private var textLayout = Pools.obtain(GlyphLayout::class.java)!!
+
+    private val manager = AssetManager()
     private lateinit var playerSprite: Texture
     private lateinit var npcSprite: Texture
     private lateinit var swordSprite: Texture
     private lateinit var healthSprite: Texture
+
+    private lateinit var hitBodySound: Sound
+    private lateinit var swordGetSound: Sound
+    private lateinit var hitSound: Sound
     private val mainPlayer = Player(
         "Player", Characteristics(
             mutableMapOf(
@@ -49,23 +58,25 @@ class Game : KtxApplicationAdapter {
     private var items = mutableListOf<Item>()
 
     override fun create() {
-
-
         loadAssets()
         initialize()
     }
 
+    private inline fun <reified T : Any>load(path: String): T {
+        manager.load<T>(path).finishLoading()
+        return manager.getAsset(path)
+    }
+
     private fun loadAssets() {
-        manager.load<Texture>("player.png").finishLoading()
-        playerSprite = manager.getAsset("player.png")
-        manager.load<Texture>("SteamMan.png").finishLoading()
-        npcSprite = manager.getAsset("SteamMan.png")
-        manager.load<Texture>("sword.png").finishLoading()
-        swordSprite = manager.getAsset("sword.png")
-        manager.load<Texture>("health.png").finishLoading()
-        healthSprite = manager.getAsset("health.png")
-        manager.load<Sound>("sound.mp3").finishLoading()
-        manager.getAsset<Sound>("sound.mp3").loop()
+        playerSprite = load("player.png")
+        playerSprite = load("player.png")
+        npcSprite = load("SteamMan.png")
+        swordSprite = load("sword.png")
+        healthSprite = load("health.png")
+        load<Sound>("sound.mp3").loop()
+        hitBodySound = load("hit_body.mp3")
+        swordGetSound = load("sword_get.mp3")
+        hitSound = load("hit.mp3")
     }
 
     private fun initialize() {
@@ -127,14 +138,17 @@ class Game : KtxApplicationAdapter {
             else -> 0f
         }
         map.move(mainPlayer, x, y)
-        if (Gdx.input.isKeyPressed(Input.Keys.F) || Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
             makeDamage(mainPlayer)
         }
     }
 
     private fun makeDamage(hitman: Player) {
+        var noDamage = true
         for (pl in npcs + mainPlayer) {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
+                noDamage = false
+                hitBodySound.play()
                 pl.takeDamage(hitman.getForce())
                 if (pl.getHealth() < 0) {
                     map.remove(pl)
@@ -144,6 +158,9 @@ class Game : KtxApplicationAdapter {
                     }
                 }
             }
+        }
+        if (noDamage) {
+            hitSound.play()
         }
     }
 
@@ -182,17 +199,9 @@ class Game : KtxApplicationAdapter {
             renderer.color = Color.GRAY
             renderer.rect(0f, 0f, 1280f, 720f)
         }
-
-        renderer.use(ShapeRenderer.ShapeType.Filled) {
-            renderer.color = Color.RED
-            val health = 28f * mainPlayer.getHealth() / 10
-            val damaged = 28f * (100 - mainPlayer.getHealth()) / 10
-            renderer.rect(20f, 680f, health, 20f)
-            renderer.color = Color.DARK_GRAY
-            renderer.rect(20f + health, 680f, damaged, 20f)
-        }
-
+        drawHealth()
         spriteBatch.begin()
+        drawInfo()
         for (npc in npcs) {
             renderNpc(npc)
         }
@@ -204,6 +213,23 @@ class Game : KtxApplicationAdapter {
         spriteBatch.end()
     }
 
+    private fun drawInfo() {
+        val font = BitmapFont()
+        textLayout.setText(font, "ASDW or arrow keys to move, ENTER or F to hit")
+        font.draw(spriteBatch, textLayout, 950f, 710f)
+    }
+
+    private fun drawHealth() {
+        renderer.use(ShapeRenderer.ShapeType.Filled) {
+            renderer.color = Color.RED
+            val health = 28f * mainPlayer.getHealth() / 10
+            val damaged = 28f * (100 - mainPlayer.getHealth()) / 10
+            renderer.rect(20f, 680f, health, 20f)
+            renderer.color = Color.DARK_GRAY
+            renderer.rect(20f + health, 680f, damaged, 20f)
+        }
+    }
+
     private fun pickItems() {
         val toRemove = mutableListOf<Item>()
         for (item in items) {
@@ -211,6 +237,7 @@ class Game : KtxApplicationAdapter {
                 if (item is Health) {
                     mainPlayer.addHealth(item.healthPoints)
                 } else if (item is Weapon) {
+                    swordGetSound.play()
                     mainPlayer.addForce(item.damage)
                 }
                 toRemove.add(item)

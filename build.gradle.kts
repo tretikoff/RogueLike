@@ -1,6 +1,4 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-//sourceSets.main.resources.srcDirs = ["../android/assets"]
-//project.ext.assetsDir = new File("../android/assets")
 plugins {
     kotlin("jvm") version "1.4.31"
 }
