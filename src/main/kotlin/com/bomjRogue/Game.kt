@@ -40,6 +40,7 @@ class Game : KtxApplicationAdapter {
     private lateinit var swordSprite: Texture
     private lateinit var healthSprite: Texture
 
+    // TODO change sound on f keys
     private lateinit var hitBodySound: Sound
     private lateinit var swordGetSound: Sound
     private lateinit var hitSound: Sound
@@ -59,6 +60,7 @@ class Game : KtxApplicationAdapter {
 
     override fun create() {
         loadAssets()
+        // TODO reinitialize properly
         initialize()
     }
 
