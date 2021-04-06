@@ -215,6 +215,8 @@ class Game : KtxApplicationAdapter {
             renderer.color = Color.GRAY
             renderer.rect(0f, 0f, 1280f, 720f)
         }
+        drawWalls()
+
         drawHealth()
         spriteBatch.begin()
         drawInfo()
@@ -229,6 +231,17 @@ class Game : KtxApplicationAdapter {
         val (h, w) = position.size
         spriteBatch.draw(playerSprite, x, y, h, w)
         spriteBatch.end()
+    }
+
+    private fun drawWalls() {
+        for (wall in map.walls) {
+            renderer.use(ShapeRenderer.ShapeType.Filled) {
+                renderer.color = Color.BLACK
+                val (x, y) = wall.value.coordinates
+                val (h, w) = wall.value.size
+                renderer.rect(x, y, w, h)
+            }
+        }
     }
 
     private fun drawInfo() {
