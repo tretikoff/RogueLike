@@ -4,6 +4,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 open class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
+    var direction: Direction = Direction.Down
+
     override fun update() {
 //        TODO("Not yet implemented")
     }
