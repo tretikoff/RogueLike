@@ -6,7 +6,7 @@ class LevelGenerator {
         val width = 1280f
         val height = 720f
         fun generateMap(): Map {
-            return Map(width, height)
+            return Map(MazeGenerator(13, 7).getMaze(), height, width)
         }
     }
 }

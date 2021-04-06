@@ -1,6 +1,10 @@
 package com.bomjRogue
 
-class Wall
+class Wall: GameObject {
+    override fun update() {
+        TODO("Not yet implemented")
+    }
+}
 
 data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
 data class Size(val height: Float, val width: Float)
@@ -15,7 +19,7 @@ class Position(val coordinates: Coordinates, val size: Size) {
 }
 
 
-class Map(private val mapHeight: Float, private val mapWidth: Float) : GameObject {
+class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) : GameObject {
     private val closenessFactor = 15f
     private val location: MutableMap<GameObject, Position> = mutableMapOf()
 
