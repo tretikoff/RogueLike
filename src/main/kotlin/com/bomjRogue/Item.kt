@@ -6,7 +6,8 @@ abstract class Item(val name: String): GameObject {
     }
 }
 
-class Weapon(name: String, val damage: Int) : Item(name) {
-}
+class Weapon(name: String, val damage: Int) : Item(name)
+
+class ExitDoor(): Item("Exit")
 
 class Health(val healthPoints: Int) : Item("Health")
