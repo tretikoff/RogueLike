@@ -1,6 +1,6 @@
 package com.bomjRogue
 
-class Wall: GameObject {
+class Wall : GameObject {
     override fun update() {
         TODO("Not yet implemented")
     }
@@ -19,9 +19,10 @@ class Position(val coordinates: Coordinates, val size: Size) {
 }
 
 
-class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) : GameObject {
+class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) :
+    GameObject {
     private val closenessFactor = 15f
-    private val location: MutableMap<GameObject, Position> = mutableMapOf()
+    private var location: MutableMap<GameObject, Position> = HashMap(walls)
 
     //    private val walls: List<Wall>
     fun add(obj: GameObject, position: Position) {
@@ -30,9 +31,12 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
 
     fun addRandomPlace(obj: GameObject, size: Size) {
         val (h, w) = size
-        val coordinates =
-            Coordinates((0..1280 - h.toInt()).random().toFloat(), (0..650 - w.toInt()).random().toFloat())
-        add(obj, Position(coordinates, size))
+        do {
+            location.remove(obj)
+            val coordinates =
+                Coordinates((0..1280 - h.toInt()).random().toFloat(), (0..650 - w.toInt()).random().toFloat())
+            add(obj, Position(coordinates, size))
+        } while (clashesWithWalls(obj))
     }
 
     fun getPosition(obj: GameObject): Position {
@@ -48,13 +52,25 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
     }
 
     fun move(obj: GameObject, x: Float, y: Float) {
-        val old = location[obj] ?: return
-        val (oldX, oldY) = old.coordinates
+        val oldPosition = location[obj] ?: return
+        val (oldX, oldY) = oldPosition.coordinates
         val newCoordinates = Coordinates(oldX + x, oldY + y)
-        val newPosition = Position(newCoordinates, old.size)
+        val newPosition = Position(newCoordinates, oldPosition.size)
         if (newPosition.valid()) {
             location[obj] = newPosition
         }
+        if (clashesWithWalls(obj)) {
+            location[obj] = oldPosition
+        }
+    }
+
+    private fun clashesWithWalls(obj: GameObject): Boolean {
+        walls.forEach {
+            if (objectsConnect(it.key, obj)) {
+                return true
+            }
+        }
+        return false
     }
 
     fun remove(obj: GameObject) {
@@ -62,7 +78,7 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
     }
 
     fun reset() {
-        location.clear()
+        location = HashMap(walls)
     }
 
     override fun update() {

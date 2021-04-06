@@ -35,6 +35,7 @@ class Game : KtxApplicationAdapter {
     private lateinit var npcSprite: Texture
     private lateinit var swordSprite: Texture
     private lateinit var healthSprite: Texture
+    private lateinit var doorSprite: Texture
 
     private lateinit var music: Sound
     private var volume = 0.0f
@@ -50,7 +51,9 @@ class Game : KtxApplicationAdapter {
             )
         )
     )
-    private var npcCount = 5
+    private val exitDoor = ExitDoor()
+    private val defaultNpcCount = 5
+    private var npcCount = defaultNpcCount
     private val map = LevelGenerator.generateMap()
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
@@ -67,7 +70,7 @@ class Game : KtxApplicationAdapter {
 
     private fun loadAssets() {
         playerSprite = load("player.png")
-        playerSprite = load("player.png")
+        doorSprite = load("door.png")
         npcSprite = load("SteamMan.png")
         swordSprite = load("sword.png")
         healthSprite = load("health.png")
@@ -80,14 +83,17 @@ class Game : KtxApplicationAdapter {
         music.loop()
     }
 
-    private fun initialize() {
+    private fun initialize(reset: Boolean = true) {
         renderer = ShapeRenderer()
         spriteBatch = SpriteBatch()
         map.reset()
         initializeNpcs()
         initializeItems()
-        mainPlayer.reset()
-        map.add(mainPlayer, Position(Coordinates(5f, 5f), Size(19f, 34f)))
+        if (reset) {
+            mainPlayer.reset()
+        }
+        map.add(mainPlayer, Position(Coordinates(20f, 20f), Size(34f, 19f)))
+        map.add(exitDoor, Position(Coordinates(1220f, 10f), Size(46f, 32f)))
     }
 
     override fun render() {
@@ -127,7 +133,7 @@ class Game : KtxApplicationAdapter {
                 )
             )
         }
-        npcs.forEach { map.addRandomPlace(it, Size(20f, 36f)) }
+        npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
     }
 
     private fun handleInput() {
@@ -154,6 +160,12 @@ class Game : KtxApplicationAdapter {
         } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
             volume = min(volume + 0.05f, 1f)
         }
+        if (map.objectsConnect(mainPlayer, exitDoor)) {
+            if (npcs.isNotEmpty()) {
+                npcCount++
+            }
+            initialize(false)
+        }
         music.setVolume(0, volume)
     }
 
@@ -168,6 +180,7 @@ class Game : KtxApplicationAdapter {
                     map.remove(pl)
                     npcs.remove(pl)
                     if (pl == mainPlayer) {
+                        npcCount = defaultNpcCount
                         initialize()
                     }
                 }
@@ -179,11 +192,6 @@ class Game : KtxApplicationAdapter {
     }
 
     private fun logic() {
-        if (npcs.isEmpty()) {
-            npcCount++
-            initializeNpcs()
-            initializeItems()
-        }
         for (npc in npcs) {
             if (map.objectsConnect(npc, mainPlayer)) {
                 if (Random.nextInt(100) < 5) {
@@ -229,8 +237,16 @@ class Game : KtxApplicationAdapter {
         val position = map.getPosition(mainPlayer)
         val (x, y) = position.coordinates
         val (h, w) = position.size
-        spriteBatch.draw(playerSprite, x, y, h, w)
+        spriteBatch.draw(playerSprite, x, y, w, h)
+        drawExit()
         spriteBatch.end()
+    }
+
+    private fun drawExit() {
+        val position = map.getPosition(exitDoor)
+        val (x, y) = position.coordinates
+        val (h, w) = position.size
+        spriteBatch.draw(doorSprite, x, y, w, h)
     }
 
     private fun drawWalls() {
@@ -287,7 +303,7 @@ class Game : KtxApplicationAdapter {
         val position = map.getPosition(npc)
         val (x, y) = position.coordinates
         val (h, w) = position.size
-        spriteBatch.draw(npcSprite, x, y, h, w)
+        spriteBatch.draw(npcSprite, x, y, w, h)
     }
 
     private fun renderItem(item: Item) {
