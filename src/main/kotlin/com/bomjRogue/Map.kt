@@ -1,32 +1,55 @@
 package com.bomjRogue
 
-import kotlin.math.abs
+class Wall
 
-class Map: GameObject {
+data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
+data class Size(val height: Float, val width: Float)
+
+
+class Position(val coordinates: Coordinates, val size: Size) {
+    fun valid(): Boolean {
+        val (x, y) = coordinates
+        val (height, width) = size
+        return x > 0 && y > 0 && x + width < 1280 && y + height < 650
+    }
+}
+
+
+class Map(private val mapHeight: Float, private val mapWidth: Float) : GameObject {
     private val closenessFactor = 15f
-    private val location: MutableMap<GameObject, Coordinates> = mutableMapOf()
-    fun add(obj: GameObject, position: Coordinates) {
+    private val location: MutableMap<GameObject, Position> = mutableMapOf()
+
+    //    private val walls: List<Wall>
+    fun add(obj: GameObject, position: Position) {
         location[obj] = position
     }
 
-    fun addRandomPlace(obj: GameObject) {
-        add(obj, Coordinates((40..650).random().toFloat(), (40..650).random().toFloat()))
+    fun addRandomPlace(obj: GameObject, size: Size) {
+        val (h, w) = size
+        val coordinates =
+            Coordinates((0..1280 - h.toInt()).random().toFloat(), (0..650 - w.toInt()).random().toFloat())
+        add(obj, Position(coordinates, size))
     }
 
-    fun getPosition(obj: GameObject): Coordinates {
+    fun getPosition(obj: GameObject): Position {
         return location[obj]!!
     }
 
     fun objectsConnect(obj1: GameObject, obj2: GameObject): Boolean {
-        return abs(getPosition(obj1).xCoordinate - getPosition(obj2).xCoordinate) < closenessFactor &&
-                abs(getPosition(obj1).yCoordinate - getPosition(obj2).yCoordinate) < closenessFactor
+        val (x, y) = getPosition(obj1).coordinates
+        val (h, w) = getPosition(obj1).size
+        val (x2, y2) = getPosition(obj2).coordinates
+        val (h2, w2) = getPosition(obj2).size
+        return x < x2 + w2 && x + w > x2 && y < y2 + h2 && y + h > y2;
     }
 
     fun move(obj: GameObject, x: Float, y: Float) {
         val old = location[obj] ?: return
-        val newCoordinates = Coordinates(old.xCoordinate + x, old.yCoordinate + y)
-        if (newCoordinates.valid()) {
-            location[obj] = newCoordinates
+        val (oldX, oldY) = old.coordinates
+        val newCoordinates = Coordinates(oldX + x, oldY + y)
+        val newPosition = Position(newCoordinates, old.size)
+        if (newPosition.valid()) {
+            location[obj] = newPosition
         }
     }
 

@@ -21,12 +21,6 @@ import kotlin.math.min
 import kotlin.random.Random
 
 
-class Coordinates(val xCoordinate: Float, val yCoordinate: Float) {
-    fun valid(): Boolean {
-        return xCoordinate > 0 && yCoordinate > 0 && xCoordinate < 1280 && yCoordinate < 650
-    }
-}
-
 interface GameObject {
     fun update()
 }
@@ -57,13 +51,12 @@ class Game : KtxApplicationAdapter {
         )
     )
     private var npcCount = 5
-    private val map = Map()
+    private val map = LevelGenerator.generateMap()
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
 
     override fun create() {
         loadAssets()
-        // TODO reinitialize properly
         initialize()
     }
 
@@ -94,7 +87,7 @@ class Game : KtxApplicationAdapter {
         initializeNpcs()
         initializeItems()
         mainPlayer.reset()
-        map.add(mainPlayer, Coordinates(5f, 5f))
+        map.add(mainPlayer, Position(Coordinates(5f, 5f), Size(19f, 34f)))
     }
 
     override fun render() {
@@ -110,9 +103,12 @@ class Game : KtxApplicationAdapter {
 
     private fun initializeItems() {
         items.clear()
-        items.add(Weapon("Slayer of dragons", 5))
-        items.add(Health(50))
-        items.forEach { map.addRandomPlace(it) }
+        val weapon = Weapon("Slayer of dragons", 5)
+        val health = Health(50)
+        items.add(weapon)
+        items.add(health)
+        map.addRandomPlace(weapon, Size(40f, 40f))
+        map.addRandomPlace(health, Size(25f, 25f))
     }
 
     private fun initializeNpcs() {
@@ -131,7 +127,7 @@ class Game : KtxApplicationAdapter {
                 )
             )
         }
-        npcs.forEach { map.addRandomPlace(it) }
+        npcs.forEach { map.addRandomPlace(it, Size(20f, 36f)) }
     }
 
     private fun handleInput() {
@@ -228,8 +224,10 @@ class Game : KtxApplicationAdapter {
         for (item in items) {
             renderItem(item)
         }
-        val coordinates = map.getPosition(mainPlayer)
-        spriteBatch.draw(playerSprite, coordinates.xCoordinate, coordinates.yCoordinate)
+        val position = map.getPosition(mainPlayer)
+        val (x, y) = position.coordinates
+        val (h, w) = position.size
+        spriteBatch.draw(playerSprite, x, y, h, w)
         spriteBatch.end()
     }
 
@@ -273,18 +271,20 @@ class Game : KtxApplicationAdapter {
     }
 
     private fun renderNpc(npc: Player) {
-        val coordinates = map.getPosition(npc)
-        spriteBatch.draw(npcSprite, coordinates.xCoordinate, coordinates.yCoordinate)
+        val position = map.getPosition(npc)
+        val (x, y) = position.coordinates
+        val (h, w) = position.size
+        spriteBatch.draw(npcSprite, x, y, h, w)
     }
 
     private fun renderItem(item: Item) {
-        val coordinates = map.getPosition(item)
-        // TODO store game object information, such as size and sprite, inside game object itself
+        val position = map.getPosition(item)
+        val (x, y) = position.coordinates
+        val (h, w) = position.size
         if (item is Health) {
-            spriteBatch.draw(healthSprite, coordinates.xCoordinate, coordinates.yCoordinate, 25f, 25f)
+            spriteBatch.draw(healthSprite, x, y, w, h)
         } else if (item is Weapon) {
-            spriteBatch.draw(swordSprite, coordinates.xCoordinate, coordinates.yCoordinate, 40f, 40f)
+            spriteBatch.draw(swordSprite, x, y, w, h)
         }
-        // TODO render health for a npc
     }
 }
