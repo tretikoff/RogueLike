@@ -9,5 +9,4 @@ enum class ObjectType {
     Wall,
 }
 
-abstract class GameObject(val type: ObjectType) {
-}
+abstract class GameObject(val type: ObjectType)

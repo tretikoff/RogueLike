@@ -1,0 +1,8 @@
+FROM gradle:6.7 as builder
+COPY build.gradle.kts .
+COPY src ./src
+RUN gradle jar
+
+FROM openjdk:8-jre-alpine
+COPY --from=builder "/home/gradle/build/libs/roguelike-1.0-SNAPSHOT.jar" /server.jar
+CMD [ "java", "-jar", "-Djava.security.egd=file:/dev/./urandom", "/server.jar" ]
