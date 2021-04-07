@@ -1,6 +1,6 @@
 package com.bomjRogue
 
-class Wall : GameObject {
+class Wall : GameObject(ObjectType.ExitDoor) {
     override fun update() {
         TODO("Not yet implemented")
     }
@@ -19,10 +19,10 @@ class Position(val coordinates: Coordinates, val size: Size) {
 }
 
 
-class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) :
-    GameObject {
+class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) {
     private val closenessFactor = 15f
-    private var location: MutableMap<GameObject, Position> = HashMap(walls)
+    var location: MutableMap<GameObject, Position> = HashMap(walls)
+        private set
 
     //    private val walls: List<Wall>
     fun add(obj: GameObject, position: Position) {
@@ -79,9 +79,5 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
 
     fun reset() {
         location = HashMap(walls)
-    }
-
-    override fun update() {
-        TODO("Not yet implemented")
     }
 }

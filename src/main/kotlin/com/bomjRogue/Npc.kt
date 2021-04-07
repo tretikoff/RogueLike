@@ -1,3 +1,3 @@
 package com.bomjRogue
 
-class Npc(name: String,characteristics: Characteristics) : Player(name, characteristics)
+class Npc(name: String,characteristics: Characteristics) : Player(name, characteristics, ObjectType.Player)

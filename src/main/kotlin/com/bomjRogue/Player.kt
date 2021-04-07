@@ -3,7 +3,7 @@ package com.bomjRogue
 import kotlin.math.max
 import kotlin.math.min
 
-open class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
+open class Player(private val name: String, private val characteristics: Characteristics, type: ObjectType) : GameObject(type) {
     var direction: Direction = Direction.Down
 
     override fun update() {
