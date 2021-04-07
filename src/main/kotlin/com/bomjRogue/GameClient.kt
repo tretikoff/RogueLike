@@ -67,7 +67,7 @@ class GameClient(private val server: GameServer) : KtxApplicationAdapter {
         music.loop()
     }
 
-    private fun initialize(reset: Boolean = true) {
+    private fun initialize() {
         renderer = ShapeRenderer()
         spriteBatch = SpriteBatch()
         server.join(player)
@@ -75,12 +75,7 @@ class GameClient(private val server: GameServer) : KtxApplicationAdapter {
 
     override fun render() {
         handleInput()
-        try {
-            draw()
-            // TODO stop rerender when initializing
-        } catch (e: ConcurrentModificationException) {
-            return
-        }
+        draw()
     }
 
     private fun handleInput() {
@@ -99,7 +94,7 @@ class GameClient(private val server: GameServer) : KtxApplicationAdapter {
             server.makeMove(player, x, y)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            server.makeDamage(player)
+            if (server.makeDamage(player)) hitBodySound.play() else hitSound.play()
         } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
             volume = max(volume - 0.05f, 0f)
         } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
