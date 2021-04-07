@@ -1,6 +1,5 @@
 package com.bomjRogue
 
-
 abstract class Item(type: ObjectType): GameObject(type)
 
 class Sword(val damage: Int) : Item(ObjectType.Sword)
