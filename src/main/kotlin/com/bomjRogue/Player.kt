@@ -6,10 +6,6 @@ import kotlin.math.min
 open class Player(private val name: String, private val characteristics: Characteristics, type: ObjectType) : GameObject(type) {
     var direction: Direction = Direction.Down
 
-    override fun update() {
-//        TODO("Not yet implemented")
-    }
-
     fun takeDamage(damage: Int) {
         characteristics.updateCharacteristic(CharacteristicType.Health, -max(damage - getArmor(), 0))
     }
@@ -32,10 +28,6 @@ open class Player(private val name: String, private val characteristics: Charact
 
     fun addForce(force: Int) {
         characteristics.updateCharacteristic(CharacteristicType.Force, force)
-    }
-
-    fun hit() {
-
     }
 
     fun reset() {

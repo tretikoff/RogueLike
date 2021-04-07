@@ -1,7 +1,5 @@
 package com.bomjRogue
 
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import ktx.app.KtxApplicationAdapter
 import kotlin.random.Random
 
@@ -57,12 +55,7 @@ class GameServer : KtxApplicationAdapter {
     }
 
     override fun render() {
-        try {
-            logic()
-            // TODO stop rerender when initializing
-        } catch (e: ConcurrentModificationException) {
-            return
-        }
+        logic()
     }
 
     private fun initializeItems() {
@@ -76,7 +69,7 @@ class GameServer : KtxApplicationAdapter {
     }
 
     fun getGameItems(): MutableMap<GameObject, Position> {
-        return map.location
+        return HashMap(map.location)
     }
 
     private fun initializeNpcs() {
@@ -97,12 +90,11 @@ class GameServer : KtxApplicationAdapter {
         npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
     }
 
-    fun makeDamage(hitman: Player) {
-//        var noDamage = true
+    fun makeDamage(hitman: Player): Boolean {
+        var noDamage = true
         for (pl in npcs + players) {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
-//                noDamage = false
-//                hitBodySound.play()
+                noDamage = false
                 pl.takeDamage(hitman.getForce())
                 if (pl.getHealth() < 0) {
                     map.remove(pl)
@@ -114,7 +106,7 @@ class GameServer : KtxApplicationAdapter {
                 }
             }
         }
-        // callBack(!noDamage);
+        return !noDamage
     }
 
     private fun logic() {

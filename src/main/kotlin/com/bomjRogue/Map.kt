@@ -1,11 +1,8 @@
 package com.bomjRogue
 
-class Wall : GameObject(ObjectType.ExitDoor) {
-    override fun update() {
-        TODO("Not yet implemented")
-    }
-}
+import kotlin.random.Random
 
+class Wall : GameObject(ObjectType.ExitDoor)
 data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
 data class Size(val height: Float, val width: Float)
 
@@ -19,12 +16,11 @@ class Position(val coordinates: Coordinates, val size: Size) {
 }
 
 
-class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, private val mapWidth: Float) {
-    private val closenessFactor = 15f
+class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, private val mapWidth: Float) {
+    private val reachableHeight = mapHeight - 30
     var location: MutableMap<GameObject, Position> = HashMap(walls)
         private set
 
-    //    private val walls: List<Wall>
     fun add(obj: GameObject, position: Position) {
         location[obj] = position
     }
@@ -33,13 +29,14 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
         val (h, w) = size
         do {
             location.remove(obj)
-            val coordinates =
-                Coordinates((0..1280 - h.toInt()).random().toFloat(), (0..650 - w.toInt()).random().toFloat())
+            val rx = ((Random.nextFloat() * reachableHeight) - h)
+            val ry = ((Random.nextFloat() * mapWidth) - w)
+            val coordinates = Coordinates(rx, ry)
             add(obj, Position(coordinates, size))
         } while (clashesWithWalls(obj))
     }
 
-    fun getPosition(obj: GameObject): Position {
+    private fun getPosition(obj: GameObject): Position {
         return location[obj]!!
     }
 
@@ -48,7 +45,7 @@ class Map(val walls: MutableMap<Wall, Position>, private val mapHeight: Float, p
         val (h, w) = getPosition(obj1).size
         val (x2, y2) = getPosition(obj2).coordinates
         val (h2, w2) = getPosition(obj2).size
-        return x < x2 + w2 && x + w > x2 && y < y2 + h2 && y + h > y2;
+        return x < x2 + w2 && x + w > x2 && y < y2 + h2 && y + h > y2
     }
 
     fun move(obj: GameObject, x: Float, y: Float) {

@@ -10,5 +10,4 @@ enum class ObjectType {
 }
 
 abstract class GameObject(val type: ObjectType) {
-    abstract fun update()
 }
