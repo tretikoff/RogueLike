@@ -1,13 +1,15 @@
 package com.bomjRogue
 
+import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
-class Wall : GameObject(ObjectType.ExitDoor)
-data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
-data class Size(val height: Float, val width: Float)
+class Wall : GameObject(ObjectType.Wall)
+@Serializable data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
+@Serializable data class Size(val height: Float, val width: Float)
 
 
-class Position(val coordinates: Coordinates, val size: Size) {
+@Serializable
+data class Position(val coordinates: Coordinates, val size: Size) {
     fun valid(): Boolean {
         val (x, y) = coordinates
         val (height, width) = size
@@ -29,8 +31,8 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, priva
         val (h, w) = size
         do {
             location.remove(obj)
-            val rx = ((Random.nextFloat() * reachableHeight) - h)
-            val ry = ((Random.nextFloat() * mapWidth) - w)
+            val rx = ((Random.nextFloat() * (reachableHeight - h)) + 30)
+            val ry = ((Random.nextFloat() * (mapWidth - w)))
             val coordinates = Coordinates(rx, ry)
             add(obj, Position(coordinates, size))
         } while (clashesWithWalls(obj))

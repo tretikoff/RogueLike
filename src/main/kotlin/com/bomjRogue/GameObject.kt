@@ -1,5 +1,7 @@
 package com.bomjRogue
 
+import kotlinx.serialization.Serializable
+
 enum class ObjectType {
     Npc,
     Player,
@@ -8,5 +10,5 @@ enum class ObjectType {
     ExitDoor,
     Wall,
 }
-
-abstract class GameObject(val type: ObjectType)
+@Serializable
+open class GameObject(val type: ObjectType)
