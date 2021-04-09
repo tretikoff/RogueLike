@@ -1,20 +1,18 @@
 package com.bomjRogue
 
-import ktx.app.KtxApplicationAdapter
+import kotlinx.coroutines.*
+import kotlin.collections.HashMap
 import kotlin.random.Random
 
-class GameServer : KtxApplicationAdapter {
-    private val players = mutableListOf(
-        Player(
-            "Player", Characteristics(
-                mutableMapOf(
-                    CharacteristicType.Health to 100,
-                    CharacteristicType.Armor to 10,
-                    CharacteristicType.Force to 20
-                )
-            ), ObjectType.Player
-        )
-    )
+class GameServer {
+    fun run() {
+        while (true) {
+            runBlocking { delay(10) }
+            logic()
+        }
+    }
+
+    private val players = mutableListOf<Character>()
     private val exitDoor = ExitDoor()
     private val defaultNpcCount = 5
     private var npcCount = defaultNpcCount
@@ -22,16 +20,23 @@ class GameServer : KtxApplicationAdapter {
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
 
-    fun join(player: Player) {
+    fun join(playerName: String): Character {
+        val player = Player(
+            playerName, Characteristics(
+                mutableMapOf(
+                    CharacteristicType.Health to 100,
+                    CharacteristicType.Armor to 10,
+                    CharacteristicType.Force to 20
+                )
+            )
+        )
         players.add(player)
         map.add(player, Position(Coordinates(20f, 20f), Size(34f, 19f)))
+        return player
     }
 
-    override fun create() {
-        initialize()
-    }
-
-    fun makeMove(player: Player, x: Float, y: Float) {
+    fun makeMove(name: String, x: Float, y: Float) {
+        val player = players.first { it.name == name }
         map.move(player, x, y)
         if (map.objectsConnect(player, exitDoor)) {
             if (npcs.isNotEmpty()) {
@@ -41,7 +46,7 @@ class GameServer : KtxApplicationAdapter {
         }
     }
 
-    private fun initialize(reset: Boolean = true) {
+    fun initialize(reset: Boolean = true) {
         map.reset()
         initializeNpcs()
         initializeItems()
@@ -52,10 +57,6 @@ class GameServer : KtxApplicationAdapter {
             map.add(it, Position(Coordinates(20f, 20f), Size(34f, 19f)))
         }
         map.add(exitDoor, Position(Coordinates(1220f, 10f), Size(46f, 32f)))
-    }
-
-    override fun render() {
-        logic()
     }
 
     private fun initializeItems() {
@@ -90,7 +91,7 @@ class GameServer : KtxApplicationAdapter {
         npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
     }
 
-    fun makeDamage(hitman: Player): Boolean {
+    fun makeDamage(hitman: Character): Boolean {
         var noDamage = true
         for (pl in npcs + players) {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {

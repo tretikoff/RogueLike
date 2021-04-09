@@ -1,5 +1,7 @@
 package com.bomjRogue
 
+import kotlinx.serialization.Serializable
+
 enum class CharacteristicType {
     Health,
     Force,
@@ -7,6 +9,7 @@ enum class CharacteristicType {
 }
 typealias CharacteristicsMap = MutableMap<CharacteristicType, Int>
 
+@Serializable
 class Characteristics(private val defaults: CharacteristicsMap) {
     private var characteristics: MutableMap<CharacteristicType, Int> = HashMap(defaults)
     fun reset() {
