@@ -11,10 +11,10 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Pools
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
@@ -34,7 +34,6 @@ import ktx.graphics.use
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
-import com.badlogic.gdx.net.HttpRequestBuilder.json
 
 
 class GameClient : KtxApplicationAdapter {
@@ -74,10 +73,13 @@ class GameClient : KtxApplicationAdapter {
             while (true) {
                 val frame = incoming.receive()
                 try {
-                    if (frame is Frame.Text) gameItems =
-                        gson.fromJson(
-                            frame.readText(), object : TypeToken<MutableMap<GameObject, Position>>() {}.type
-                        )
+                    if (frame is Frame.Text) {
+                        val text = frame.readText()
+                        gameItems =
+                            gson.fromJson(
+                                text, object : TypeToken<MutableMap<GameObject, Position>>() {}.type
+                            )
+                    }
                 } catch (e: Exception) {
                     println(e)
 
@@ -133,8 +135,15 @@ class GameClient : KtxApplicationAdapter {
     private fun makeMove(x: Float, y: Float) {
         runBlocking {
             val request = MoveRequest(playerName, x, y)
-            client.post<MoveRequest>(port = 8080, path = "/move") {
+            try {
+
+            client.post<MoveRequest>("http://localhost:8080/move") {
+//                body = gson.toJson(request)
                 body = request
+                contentType(ContentType.Application.Json)
+            }
+            } catch (e: NoTransformationFoundException) {
+                //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
             }
         }
     }
