@@ -1,8 +1,6 @@
 package com.bomjRogue
 
-import com.google.gson.Gson
 import io.ktor.application.*
-import io.ktor.client.features.json.*
 import io.ktor.features.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
@@ -18,6 +16,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 
 
 fun main() {
@@ -42,8 +41,18 @@ fun main() {
                 }
             }
             post("/move") {
-                val data = call.receive<GameClient.MoveRequest>()
-                game.makeMove(data.playerName, data.x, data.y)
+                try {
+//                    val text = call.receiveText().replace("\"", "")
+//
+//                    val data: GameClient.MoveRequest = gson.fromJson(
+//                        text, object : TypeToken<GameClient.MoveRequest>() {}.type
+//                    )
+                    val data = call.receive<GameClient.MoveRequest>()
+                    game.makeMove(data.playerName, data.x, data.y)
+                } catch (e: Exception) {
+                    println(e)
+                }
+                call.respond(HttpStatusCode.Accepted)
             }
             get("/join") {
                 val name = call.request.queryParameters["name"]
