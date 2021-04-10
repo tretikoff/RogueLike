@@ -1,10 +1,12 @@
 package com.bomjRogue
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.collections.HashMap
 import kotlin.random.Random
 
-class GameServer {
+class Game {
     fun run() {
         while (true) {
             runBlocking { delay(10) }
@@ -12,13 +14,31 @@ class GameServer {
         }
     }
 
-    private val players = mutableListOf<Character>()
+    private val players = mutableListOf<Player>()
     private val exitDoor = ExitDoor()
     private val defaultNpcCount = 5
     private var npcCount = defaultNpcCount
     private val map = LevelGenerator.generateMap()
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
+    private var updates = mutableListOf<Update>()
+    private val updatesMutex = Mutex()
+
+    private fun addUpdate(update: Update) {
+        runBlocking {
+            updatesMutex.withLock {
+                updates.add(update)
+            }
+        }
+    }
+
+    suspend fun getUpdates(): List<Update> {
+        updatesMutex.withLock {
+            val upd = ArrayList(updates)
+            updates = mutableListOf()
+            return upd
+        }
+    }
 
     fun join(playerName: String): Character {
         val player = Player(
@@ -36,7 +56,7 @@ class GameServer {
     }
 
     fun makeMove(name: String, x: Float, y: Float) {
-        val player = players.first { it.name == name }
+        val player = players.firstOrNull { it.name == name } ?: return
         map.move(player, x, y)
         if (map.objectsConnect(player, exitDoor)) {
             if (npcs.isNotEmpty()) {
@@ -44,6 +64,11 @@ class GameServer {
             }
             initialize(false)
         }
+    }
+
+    fun hit(name: String) {
+        val player = players.firstOrNull { it.name == name } ?: return
+        makeDamage(player)
     }
 
     fun initialize(reset: Boolean = true) {
@@ -69,7 +94,7 @@ class GameServer {
         map.addRandomPlace(health, Size(25f, 25f))
     }
 
-    fun getGameItems(): MutableMap<GameObject, Position> {
+    fun getGameItems(): GameItems {
         return HashMap(map.location)
     }
 
@@ -95,6 +120,9 @@ class GameServer {
         var noDamage = true
         for (pl in npcs + players) {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
+                if (pl is Player) {
+                    addUpdate(PlayerUpdate(pl))
+                }
                 noDamage = false
                 pl.takeDamage(hitman.getForce())
                 if (pl.getHealth() < 0) {
@@ -111,6 +139,11 @@ class GameServer {
     }
 
     private fun logic() {
+        moveNpcs()
+        pickItems()
+    }
+
+    private fun moveNpcs() {
         for (npc in npcs) {
             for (player in players) {
                 if (map.objectsConnect(npc, player)) {
@@ -135,7 +168,6 @@ class GameServer {
                 map.move(npc, x, y)
             }
         }
-        pickItems()
     }
 
 
@@ -147,9 +179,9 @@ class GameServer {
                     if (item is Health) {
                         player.addHealth(item.healthPoints)
                     } else if (item is Sword) {
-//                        swordGetSound.play()
                         player.addForce(item.damage)
                     }
+                    addUpdate(PlayerUpdate(player))
                     toRemove.add(item)
                 }
             }
@@ -159,5 +191,4 @@ class GameServer {
             map.remove(it)
         }
     }
-
 }
