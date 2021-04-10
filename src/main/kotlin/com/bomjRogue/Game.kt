@@ -1,113 +1,106 @@
 package com.bomjRogue
 
-import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.Input
-import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.audio.Sound
-import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.GlyphLayout
-import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.utils.Pools
-import ktx.app.KtxApplicationAdapter
-import ktx.app.clearScreen
-import ktx.assets.getAsset
-import ktx.assets.load
-import ktx.graphics.use
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.collections.HashMap
 import kotlin.random.Random
 
-
-class Coordinates(val xCoordinate: Float, val yCoordinate: Float) {
-    fun valid(): Boolean {
-        return xCoordinate > 0 && yCoordinate > 0 && xCoordinate < 1280 && yCoordinate < 650
+class Game {
+    fun run() {
+        while (true) {
+            runBlocking { delay(10) }
+            logic()
+        }
     }
-}
 
-interface GameObject {
-    fun update()
-}
-
-class Game : KtxApplicationAdapter {
-    private lateinit var renderer: ShapeRenderer
-    private lateinit var spriteBatch: SpriteBatch
-    private var textLayout = Pools.obtain(GlyphLayout::class.java)!!
-
-    private val manager = AssetManager()
-    private lateinit var playerSprite: Texture
-    private lateinit var npcSprite: Texture
-    private lateinit var swordSprite: Texture
-    private lateinit var healthSprite: Texture
-
-    // TODO change sound on f keys
-    private lateinit var hitBodySound: Sound
-    private lateinit var swordGetSound: Sound
-    private lateinit var hitSound: Sound
-    private val mainPlayer = Player(
-        "Player", Characteristics(
-            mutableMapOf(
-                CharacteristicType.Health to 100,
-                CharacteristicType.Armor to 10,
-                CharacteristicType.Force to 20
-            )
-        )
-    )
-    private val npcCount = 5
-    private val map = Map()
+    private val players = mutableListOf<Player>()
+    private val exitDoor = ExitDoor()
+    private val defaultNpcCount = 5
+    private var npcCount = defaultNpcCount
+    private val map = LevelGenerator.generateMap()
     private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
+    private var updates = mutableListOf<Update>()
+    private val updatesMutex = Mutex()
 
-    override fun create() {
-        loadAssets()
-        // TODO reinitialize properly
-        initialize()
+    private fun addUpdate(update: Update) {
+        runBlocking {
+            updatesMutex.withLock {
+                updates.add(update)
+            }
+        }
     }
 
-    private inline fun <reified T : Any>load(path: String): T {
-        manager.load<T>(path).finishLoading()
-        return manager.getAsset(path)
+    suspend fun getUpdates(): List<Update> {
+        updatesMutex.withLock {
+            val upd = ArrayList(updates)
+            updates = mutableListOf()
+            return upd
+        }
     }
 
-    private fun loadAssets() {
-        playerSprite = load("player.png")
-        playerSprite = load("player.png")
-        npcSprite = load("SteamMan.png")
-        swordSprite = load("sword.png")
-        healthSprite = load("health.png")
-        load<Sound>("sound.mp3").loop()
-        hitBodySound = load("hit_body.mp3")
-        swordGetSound = load("sword_get.mp3")
-        hitSound = load("hit.mp3")
+    fun join(playerName: String): Character {
+        val player = Player(
+            playerName, Characteristics(
+                mutableMapOf(
+                    CharacteristicType.Health to 100,
+                    CharacteristicType.Armor to 10,
+                    CharacteristicType.Force to 20
+                )
+            )
+        )
+        players.add(player)
+        map.add(player, Position(Coordinates(20f, 20f), Size(34f, 19f)))
+        return player
     }
 
-    private fun initialize() {
+    fun makeMove(name: String, x: Float, y: Float) {
+        val player = players.firstOrNull { it.name == name } ?: return
+        map.move(player, x, y)
+        if (map.objectsConnect(player, exitDoor)) {
+            if (npcs.isNotEmpty()) {
+                npcCount++
+            }
+            initialize(false)
+        }
+    }
+
+    fun hit(name: String) {
+        val player = players.firstOrNull { it.name == name } ?: return
+        makeDamage(player)
+    }
+
+    fun initialize(reset: Boolean = true) {
         map.reset()
-        mainPlayer.reset()
-        map.add(mainPlayer, Coordinates(5f, 5f))
-        renderer = ShapeRenderer()
-        spriteBatch = SpriteBatch()
         initializeNpcs()
         initializeItems()
-    }
-
-    override fun render() {
-        handleInput()
-        logic()
-        draw()
+        if (reset) {
+            players.forEach { it.reset() }
+        }
+        players.forEach {
+            map.add(it, Position(Coordinates(20f, 20f), Size(34f, 19f)))
+        }
+        map.add(exitDoor, Position(Coordinates(1220f, 10f), Size(46f, 32f)))
     }
 
     private fun initializeItems() {
         items.clear()
-        items.add(Weapon("Slayer of dragons", 5))
-        items.add(Health(50))
-        items.forEach { map.addRandomPlace(it) }
+        val weapon = Sword(5)
+        val health = Health(50)
+        items.add(weapon)
+        items.add(health)
+        map.addRandomPlace(weapon, Size(40f, 40f))
+        map.addRandomPlace(health, Size(25f, 25f))
+    }
+
+    fun getGameItems(): GameItems {
+        return HashMap(map.location)
     }
 
     private fun initializeNpcs() {
         npcs.clear()
         for (i in 0 until npcCount) {
-            // TODO randomize npc
             npcs.add(
                 Npc(
                     "Npc_$i", Characteristics(
@@ -120,60 +113,43 @@ class Game : KtxApplicationAdapter {
                 )
             )
         }
-        npcs.forEach { map.addRandomPlace(it) }
+        npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
     }
 
-    private fun handleInput() {
-        val step = 3f
-        val x = when {
-            Gdx.input.isKeyPressed(Input.Keys.A) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.LEFT) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.D) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.RIGHT) -> +step
-            else -> 0f
-        }
-        val y = when {
-            Gdx.input.isKeyPressed(Input.Keys.W) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.UP) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.S) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.DOWN) -> -step
-            else -> 0f
-        }
-        map.move(mainPlayer, x, y)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            makeDamage(mainPlayer)
-        }
-    }
-
-    private fun makeDamage(hitman: Player) {
+    fun makeDamage(hitman: Character): Boolean {
         var noDamage = true
-        for (pl in npcs + mainPlayer) {
+        for (pl in npcs + players) {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
+                if (pl is Player) {
+                    addUpdate(PlayerUpdate(pl))
+                }
                 noDamage = false
-                hitBodySound.play()
                 pl.takeDamage(hitman.getForce())
                 if (pl.getHealth() < 0) {
                     map.remove(pl)
                     npcs.remove(pl)
-                    if (pl == mainPlayer) {
+                    if (players.count() == 0) {
+                        npcCount = defaultNpcCount
                         initialize()
                     }
                 }
             }
         }
-        if (noDamage) {
-            hitSound.play()
-        }
+        return !noDamage
     }
 
     private fun logic() {
-        if (npcs.isEmpty()) {
-            initializeNpcs()
-        }
+        moveNpcs()
+        pickItems()
+    }
+
+    private fun moveNpcs() {
         for (npc in npcs) {
-            if (map.objectsConnect(npc, mainPlayer)) {
-                if (Random.nextInt(100) < 5) {
-                    makeDamage(npc)
+            for (player in players) {
+                if (map.objectsConnect(npc, player)) {
+                    if (Random.nextInt(100) < 5) {
+                        makeDamage(npc)
+                    }
                 }
             }
             if (Random.nextInt(100) < 5) {
@@ -192,78 +168,27 @@ class Game : KtxApplicationAdapter {
                 map.move(npc, x, y)
             }
         }
-        pickItems()
     }
 
-    private fun draw() {
-        clearScreen(0f, 0f, 0f, 0f)
-        renderer.use(ShapeRenderer.ShapeType.Filled) {
-            renderer.color = Color.GRAY
-            renderer.rect(0f, 0f, 1280f, 720f)
-        }
-        drawHealth()
-        spriteBatch.begin()
-        drawInfo()
-        for (npc in npcs) {
-            renderNpc(npc)
-        }
-        for (item in items) {
-            renderItem(item)
-        }
-        val coordinates = map.getPosition(mainPlayer)
-        spriteBatch.draw(playerSprite, coordinates.xCoordinate, coordinates.yCoordinate)
-        spriteBatch.end()
-    }
-
-    private fun drawInfo() {
-        val font = BitmapFont()
-        textLayout.setText(font, "ASDW or arrow keys to move, ENTER or F to hit")
-        font.draw(spriteBatch, textLayout, 950f, 710f)
-    }
-
-    private fun drawHealth() {
-        renderer.use(ShapeRenderer.ShapeType.Filled) {
-            renderer.color = Color.RED
-            val health = 28f * mainPlayer.getHealth() / 10
-            val damaged = 28f * (100 - mainPlayer.getHealth()) / 10
-            renderer.rect(20f, 680f, health, 20f)
-            renderer.color = Color.DARK_GRAY
-            renderer.rect(20f + health, 680f, damaged, 20f)
-        }
-    }
 
     private fun pickItems() {
         val toRemove = mutableListOf<Item>()
         for (item in items) {
-            if (map.objectsConnect(item, mainPlayer)) {
-                if (item is Health) {
-                    mainPlayer.addHealth(item.healthPoints)
-                } else if (item is Weapon) {
-                    swordGetSound.play()
-                    mainPlayer.addForce(item.damage)
+            for (player in players) {
+                if (map.objectsConnect(item, player)) {
+                    if (item is Health) {
+                        player.addHealth(item.healthPoints)
+                    } else if (item is Sword) {
+                        player.addForce(item.damage)
+                    }
+                    addUpdate(PlayerUpdate(player))
+                    toRemove.add(item)
                 }
-                toRemove.add(item)
             }
         }
         toRemove.forEach {
             items.remove(it)
             map.remove(it)
         }
-    }
-
-    private fun renderNpc(npc: Player) {
-        val coordinates = map.getPosition(npc)
-        spriteBatch.draw(npcSprite, coordinates.xCoordinate, coordinates.yCoordinate)
-    }
-
-    private fun renderItem(item: Item) {
-        val coordinates = map.getPosition(item)
-        // TODO store game object information, such as size and sprite, inside object itself
-        if (item is Health) {
-            spriteBatch.draw(healthSprite, coordinates.xCoordinate, coordinates.yCoordinate, 25f, 25f)
-        } else if (item is Weapon) {
-            spriteBatch.draw(swordSprite, coordinates.xCoordinate, coordinates.yCoordinate, 40f, 40f)
-        }
-        // TODO render health for a player
     }
 }

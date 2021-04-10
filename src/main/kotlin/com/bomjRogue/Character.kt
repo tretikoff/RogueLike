@@ -1,12 +1,13 @@
 package com.bomjRogue
 
+import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.min
 
-open class Player(private val name: String, private val characteristics: Characteristics) : GameObject {
-    override fun update() {
-//        TODO("Not yet implemented")
-    }
+class Player(name: String, characteristics: Characteristics) : Character(name, characteristics, ObjectType.Player)
+@Serializable
+open class Character(val name: String, private val characteristics: Characteristics, private val tp: ObjectType) : GameObject(tp) {
+    var direction: Direction = Direction.Down
 
     fun takeDamage(damage: Int) {
         characteristics.updateCharacteristic(CharacteristicType.Health, -max(damage - getArmor(), 0))
@@ -30,10 +31,6 @@ open class Player(private val name: String, private val characteristics: Charact
 
     fun addForce(force: Int) {
         characteristics.updateCharacteristic(CharacteristicType.Force, force)
-    }
-
-    fun hit() {
-
     }
 
     fun reset() {

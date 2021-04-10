@@ -1,12 +1,9 @@
 package com.bomjRogue
 
-abstract class Item(val name: String): GameObject {
-    override fun update() {
-        TODO("Not yet implemented")
-    }
-}
+abstract class Item(type: ObjectType): GameObject(type)
 
-class Weapon(name: String, val damage: Int) : Item(name) {
-}
+class Sword(val damage: Int) : Item(ObjectType.Sword)
 
-class Health(val healthPoints: Int) : Item("Health")
+class ExitDoor: Item(ObjectType.ExitDoor)
+
+class Health(val healthPoints: Int) : Item(ObjectType.Health)
