@@ -3,24 +3,24 @@ package com.bomjRogue
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
+typealias GameItems = MutableMap<GameObject, Position>
+
 class Wall : GameObject(ObjectType.Wall)
-@Serializable data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
-@Serializable data class Size(val height: Float, val width: Float)
+
+@Serializable
+data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)
+
+@Serializable
+data class Size(val height: Float, val width: Float)
 
 
 @Serializable
-data class Position(val coordinates: Coordinates, val size: Size) {
-    fun valid(): Boolean {
-        val (x, y) = coordinates
-        val (height, width) = size
-        return x > 0 && y > 0 && x + width < 1280 && y + height < 650
-    }
-}
-
+data class Position(val coordinates: Coordinates, val size: Size)
 
 class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, private val mapWidth: Float) {
-    private val reachableHeight = mapHeight - 30
-    var location: MutableMap<GameObject, Position> = HashMap(walls)
+    private val reachableHeight = mapHeight - 70
+
+    var location: GameItems = HashMap(walls)
         private set
 
     fun add(obj: GameObject, position: Position) {
@@ -31,15 +31,11 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, priva
         val (h, w) = size
         do {
             location.remove(obj)
-            val rx = ((Random.nextFloat() * (reachableHeight - h)) + 30)
-            val ry = ((Random.nextFloat() * (mapWidth - w)))
+            val rx = ((Random.nextFloat() * (mapWidth - w)))
+            val ry = ((Random.nextFloat() * (reachableHeight - h)))
             val coordinates = Coordinates(rx, ry)
             add(obj, Position(coordinates, size))
         } while (clashesWithWalls(obj))
-    }
-
-    private fun getPosition(obj: GameObject): Position {
-        return location[obj]!!
     }
 
     fun objectsConnect(obj1: GameObject, obj2: GameObject): Boolean {
@@ -63,6 +59,20 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, priva
         }
     }
 
+    fun remove(obj: GameObject) {
+        location.remove(obj)
+    }
+
+    fun reset() {
+        location = HashMap(walls)
+    }
+
+    private fun Position.valid(): Boolean {
+        val (x, y) = coordinates
+        val (height, width) = size
+        return x > 0 && y > 0 && x + width < mapWidth && y + height < reachableHeight
+    }
+
     private fun clashesWithWalls(obj: GameObject): Boolean {
         walls.forEach {
             if (objectsConnect(it.key, obj)) {
@@ -72,11 +82,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, priva
         return false
     }
 
-    fun remove(obj: GameObject) {
-        location.remove(obj)
-    }
-
-    fun reset() {
-        location = HashMap(walls)
+    private fun getPosition(obj: GameObject): Position {
+        return location[obj]!!
     }
 }

@@ -16,16 +16,15 @@ import com.google.gson.reflect.TypeToken
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.features.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.websocket.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.http.cio.websocket.*
-import io.ktor.util.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
 import ktx.app.KtxApplicationAdapter
 import ktx.app.clearScreen
 import ktx.assets.getAsset
@@ -34,7 +33,6 @@ import ktx.graphics.use
 import java.util.*
 import kotlin.math.max
 import kotlin.math.min
-
 
 class GameClient : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
@@ -49,40 +47,46 @@ class GameClient : KtxApplicationAdapter {
     private val sprites = mutableMapOf<ObjectType, Texture>()
 
     private lateinit var music: Sound
-    private var volume = 0.0f
+    private var volume = 0.05f
     private lateinit var hitBodySound: Sound
     private lateinit var swordGetSound: Sound
     private lateinit var hitSound: Sound
     private val client = HttpClient(CIO) {
-        url { host = "127.0.0.1"; port = 8080 }
         install(JsonFeature)
         install(WebSockets)
+        defaultRequest {
+            host = "localhost"
+            port = 8080
+        }
     }
 
     private suspend fun join() {
-        player = client.get<Character>("http://localhost:8080/join") {
+        player = client.get<Character>("/join") {
             accept(ContentType.Any)
             parameter("name", playerName)
         }
     }
 
-    suspend fun receive() {
-//        client.ws(host = "127.0.0.1", port = 8080, path = "/items") {
-        client.webSocket(method = HttpMethod.Get, host = "localhost", port = 8080, path = "/items") {
-            println("starting to connect")
+    private suspend fun receive() {
+        client.webSocket("/items") {
             while (true) {
                 val frame = incoming.receive()
-                try {
-                    if (frame is Frame.Text) {
-                        val text = frame.readText()
-                        gameItems =
-                            gson.fromJson(
-                                text, object : TypeToken<MutableMap<GameObject, Position>>() {}.type
-                            )
+                if (frame is Frame.Text) {
+                    val text = frame.readText()
+                    val updType = object : TypeToken<Update>() {}.type
+                    val upd: Update = gson.fromJson(text, updType)
+                    when (upd.type) {
+                        UpdateType.ItemsUpdate -> {
+                            val update: MapUpdate = gson.fromJson(text, object : TypeToken<MapUpdate>() {}.type)
+                            gameItems = update.items
+                        }
+                        UpdateType.PlayerUpdate -> {
+                            val update: PlayerUpdate = gson.fromJson(text, object : TypeToken<PlayerUpdate>() {}.type)
+                            if (update.player.name == playerName) {
+                                player = update.player
+                            }
+                        }
                     }
-                } catch (e: Exception) {
-                    println(e)
-
                 }
             }
         }
@@ -110,7 +114,7 @@ class GameClient : KtxApplicationAdapter {
         hitBodySound = load("hit_body.mp3")
         swordGetSound = load("sword_get.mp3")
         hitSound = load("hit.mp3")
-        music.loop()
+        music.loop(volume)
     }
 
     private fun initialize() {
@@ -126,22 +130,31 @@ class GameClient : KtxApplicationAdapter {
 
     override fun render() {
         handleInput()
-        draw()
+        update()
     }
 
-    @Serializable
-    class MoveRequest(val playerName: String, val x: Float, val y: Float)
+    private fun hit() {
+        runBlocking {
+            val request = HitCommand(playerName)
+            try {
+                client.post<MoveCommand>("/hit") {
+                    body = request
+                    contentType(ContentType.Application.Json)
+                }
+            } catch (e: NoTransformationFoundException) {
+                //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
+            }
+        }
+    }
 
     private fun makeMove(x: Float, y: Float) {
         runBlocking {
-            val request = MoveRequest(playerName, x, y)
+            val request = MoveCommand(playerName, x, y)
             try {
-
-            client.post<MoveRequest>("http://localhost:8080/move") {
-//                body = gson.toJson(request)
-                body = request
-                contentType(ContentType.Application.Json)
-            }
+                client.post<MoveCommand>("/move") {
+                    body = request
+                    contentType(ContentType.Application.Json)
+                }
             } catch (e: NoTransformationFoundException) {
                 //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
             }
@@ -164,7 +177,7 @@ class GameClient : KtxApplicationAdapter {
             makeMove(x, y)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-//            if (server.makeDamage(player)) hitBodySound.play() else hitSound.play()
+            hit()
         } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
             volume = max(volume - 0.05f, 0f)
         } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
@@ -173,20 +186,26 @@ class GameClient : KtxApplicationAdapter {
         music.setVolume(0, volume)
     }
 
-    private fun draw() {
+    private fun update() {
         clearScreen(0f, 0f, 0f, 0f)
         renderer.use(ShapeRenderer.ShapeType.Filled) {
             renderer.color = Color.GRAY
             renderer.rect(0f, 0f, 1280f, 720f)
         }
 
-        spriteBatch.begin()
+        for (obj in gameItems) {
+            val item = obj.key
+            val position = obj.value
+//            if (item.type == ObjectType.Player) {
+//                val playerItem = item as Player
+//                if (playerItem.name == playerName) {
+//                    player = playerItem
+//                }
+//            }
+            render(item, position)
+        }
         drawHealth()
         drawInfo()
-        spriteBatch.end()
-        for (obj in gameItems) {
-            render(obj.key, obj.value)
-        }
     }
 
     private fun render(obj: GameObject, pos: Position) {
@@ -205,15 +224,18 @@ class GameClient : KtxApplicationAdapter {
     }
 
     private fun drawInfo() {
+        spriteBatch.begin()
         val font = BitmapFont()
         textLayout.setText(
             font,
             "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
         )
         font.draw(spriteBatch, textLayout, 950f, 710f)
+        spriteBatch.end()
     }
 
     private fun drawHealth() {
+        spriteBatch.begin()
         if (player == null) return
         renderer.use(ShapeRenderer.ShapeType.Filled) {
             renderer.color = Color.RED
@@ -223,5 +245,6 @@ class GameClient : KtxApplicationAdapter {
             renderer.color = Color.DARK_GRAY
             renderer.rect(20f + health, 680f, damaged, 20f)
         }
+        spriteBatch.end()
     }
 }

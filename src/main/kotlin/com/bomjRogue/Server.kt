@@ -16,13 +16,24 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.Serializable
 
+enum class UpdateType {
+    ItemsUpdate,
+    PlayerUpdate,
+//    MusicPlay,
+}
+
+@Serializable
+open class Update(val type: UpdateType)
+
+data class MapUpdate(val items: GameItems) : Update(UpdateType.ItemsUpdate)
+data class PlayerUpdate(val player: Player) : Update(UpdateType.PlayerUpdate)
 
 fun main() {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
     embeddedServer(Netty, host = "localhost", port = 8080) {
-        val game = GameServer()
+        val game = Game()
 
         install(WebSockets)
         install(ContentNegotiation) {
@@ -35,51 +46,38 @@ fun main() {
         routing {
             webSocket("/items") {
                 while (true) {
-                    val data = gson.toJson(game.getGameItems())
+                    val data = gson.toJson(MapUpdate(game.getGameItems()))
                     send(Frame.Text(TextContent(data, ContentType.Any).text))
+                    for (update in game.getUpdates()) {
+                    send(Frame.Text(TextContent(data, ContentType.Any).text))
+                        send(Frame.Text(TextContent(gson.toJson(update), ContentType.Any).text))
+                    }
                     delay(100)
                 }
             }
             post("/move") {
-                try {
-//                    val text = call.receiveText().replace("\"", "")
-//
-//                    val data: GameClient.MoveRequest = gson.fromJson(
-//                        text, object : TypeToken<GameClient.MoveRequest>() {}.type
-//                    )
-                    val data = call.receive<GameClient.MoveRequest>()
-                    game.makeMove(data.playerName, data.x, data.y)
-                } catch (e: Exception) {
-                    println(e)
-                }
+                val data = call.receive<MoveCommand>()
+                game.makeMove(data.playerName, data.x, data.y)
+                call.respond(HttpStatusCode.Accepted)
+            }
+            post("/hit") {
+                val data = call.receive<HitCommand>()
+                game.hit(data.playerName)
                 call.respond(HttpStatusCode.Accepted)
             }
             get("/join") {
+                try {
+
                 val name = call.request.queryParameters["name"]
                 if (name != null) {
-                    println(name)
-                    try {
-                        call.respond(game.join(name))
-                    } catch (e: Exception) {
-                        println(e)
-                    }
+                    call.respond(HttpStatusCode.Accepted, game.join(name))
                 } else {
                     call.respond(HttpStatusCode.BadRequest, "Could not join the game")
+                }
+                }catch (e: Exception) {
+                    println(e)
                 }
             }
         }
     }.start(wait = true)
-}
-
-
-fun Application.module() {
-
-    routing {
-        get("hello") {
-            call.respond("world")
-        }
-        get {
-            call.respondText("world default")
-        }
-    }
 }
