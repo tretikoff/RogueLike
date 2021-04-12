@@ -1,8 +1,11 @@
 package com.bomjRogue.game
 
+import com.bomjRogue.MusicUpdate
 import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.character.*
+import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
+import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.world.*
 import com.bomjRogue.world.Map.PredefinedCoords.doorSpawn
 import com.bomjRogue.world.Map.PredefinedCoords.playerSpawn
@@ -143,6 +146,7 @@ class Game {
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
                 if (pl is Player) {
                     addUpdate(PlayerUpdate(pl))
+                    addUpdate(MusicUpdate(fleshHitSoundName))
                 }
                 noDamage = false
                 pl.takeDamage(hitman.getForce())
@@ -150,6 +154,7 @@ class Game {
                     map.remove(pl)
                     if (pl is Npc) {
                         npcs.remove(pl)
+                        continue
                     }
                     if (pl is Player) {
                         respawn(pl.name)
@@ -208,6 +213,7 @@ class Game {
                         player.addForce(item.damage)
                     }
                     addUpdate(PlayerUpdate(player))
+                    addUpdate(MusicUpdate(itemPickUpSoundName))
                     toRemove.add(item)
                 }
             }

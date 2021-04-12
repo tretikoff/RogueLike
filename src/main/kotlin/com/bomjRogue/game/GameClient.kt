@@ -11,11 +11,11 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Pools
-import com.bomjRogue.MapUpdate
-import com.bomjRogue.PlayerUpdate
-import com.bomjRogue.Update
-import com.bomjRogue.UpdateType
+import com.bomjRogue.*
 import com.bomjRogue.character.Character
+import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
+import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
+import com.bomjRogue.config.Utils.Companion.swordHitSoundName
 import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
 import com.bomjRogue.game.command.MoveCommand
@@ -62,6 +62,7 @@ class GameClient : KtxApplicationAdapter {
     private lateinit var hitBodySound: Sound
     private lateinit var swordGetSound: Sound
     private lateinit var hitSound: Sound
+    private lateinit var knownSounds: Map<String, Sound>
     private val client = HttpClient(CIO) {
         install(JsonFeature)
         install(WebSockets)
@@ -97,6 +98,10 @@ class GameClient : KtxApplicationAdapter {
                                 player = update.player
                             }
                         }
+                        UpdateType.MusicPlay -> {
+                            val update: MusicUpdate = gson.fromJson(text, object : TypeToken<MusicUpdate>() {}.type)
+                            knownSounds[update.soundName]?.play()
+                        }
                     }
                 }
             }
@@ -122,9 +127,11 @@ class GameClient : KtxApplicationAdapter {
 // Replace if your PC is strong enough
 //        load<Sound>("sound.mp3").loop()
         music = load("sound_light.mp3")
-        hitBodySound = load("hit_body.mp3")
-        swordGetSound = load("sword_get.mp3")
-        hitSound = load("hit.mp3")
+        hitBodySound = load(fleshHitSoundName)
+        swordGetSound = load(itemPickUpSoundName)
+        hitSound = load(swordHitSoundName)
+        knownSounds = mapOf(fleshHitSoundName to hitBodySound,
+        itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound)
         music.loop(volume)
     }
 
@@ -147,6 +154,7 @@ class GameClient : KtxApplicationAdapter {
     private fun hit() {
         runBlocking {
             val request = HitCommand(playerName)
+            hitSound.play() // anyway
             try {
                 client.post<MoveCommand>("/hit") {
                     body = request
@@ -183,6 +191,10 @@ class GameClient : KtxApplicationAdapter {
             } catch (e: NoTransformationFoundException) {
                 //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
             }
+        }
+        //todo: add ma here
+        for (item in gameItems) {
+
         }
     }
 

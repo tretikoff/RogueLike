@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 enum class UpdateType {
     ItemsUpdate,
     PlayerUpdate,
-//    MusicPlay,
+    MusicPlay,
 }
 
 @Serializable
@@ -35,6 +35,7 @@ open class Update(val type: UpdateType)
 
 data class MapUpdate(val items: GameItems) : Update(UpdateType.ItemsUpdate)
 data class PlayerUpdate(val player: Player) : Update(UpdateType.PlayerUpdate)
+data class MusicUpdate(val soundName: String) : Update(UpdateType.MusicPlay)
 
 fun main() {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
