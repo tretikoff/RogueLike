@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.character
 
 import kotlinx.serialization.Serializable
 

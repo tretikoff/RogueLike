@@ -1,5 +1,8 @@
-package com.bomjRogue
+package com.bomjRogue.character
 
+import com.bomjRogue.game.Direction
+import com.bomjRogue.world.interactive.GameObject
+import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.min

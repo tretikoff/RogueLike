@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.world.interactive
 
 import kotlinx.serialization.Serializable
 

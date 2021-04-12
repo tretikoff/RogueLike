@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.world.interactive
 
 abstract class Item(type: ObjectType): GameObject(type)
 

@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.game
 
 enum class Direction {
     Left,

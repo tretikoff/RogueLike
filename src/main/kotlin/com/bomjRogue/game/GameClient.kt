@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.game
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
@@ -11,6 +11,16 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Pools
+import com.bomjRogue.MapUpdate
+import com.bomjRogue.PlayerUpdate
+import com.bomjRogue.Update
+import com.bomjRogue.UpdateType
+import com.bomjRogue.character.Character
+import com.bomjRogue.game.command.HitCommand
+import com.bomjRogue.game.command.MoveCommand
+import com.bomjRogue.world.Position
+import com.bomjRogue.world.interactive.GameObject
+import com.bomjRogue.world.interactive.ObjectType
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import io.ktor.client.*
@@ -56,7 +66,7 @@ class GameClient : KtxApplicationAdapter {
         install(WebSockets)
         defaultRequest {
             host = "localhost"
-            port = 8080
+            port = 8084
         }
     }
 

@@ -1,5 +1,7 @@
-package com.bomjRogue
+package com.bomjRogue.world
 
+import com.bomjRogue.world.interactive.GameObject
+import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 

@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.world
 
 class MazeGenerator(private val x: Int, private val y: Int) {
     private val maze = Array(x) { IntArray(y) }

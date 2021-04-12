@@ -1,4 +1,4 @@
-package com.bomjRogue
+package com.bomjRogue.world
 
 class LevelGenerator {
     companion object {

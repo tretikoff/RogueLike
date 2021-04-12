@@ -1,5 +1,11 @@
 package com.bomjRogue
 
+import com.bomjRogue.character.Player
+import com.bomjRogue.game.Game
+import com.bomjRogue.game.command.HitCommand
+import com.bomjRogue.game.command.MoveCommand
+import com.bomjRogue.world.GameItems
+import com.google.gson.GsonBuilder
 import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
@@ -15,7 +21,6 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import com.google.gson.GsonBuilder
 import kotlinx.serialization.Serializable
 
 enum class UpdateType {
@@ -32,7 +37,7 @@ data class PlayerUpdate(val player: Player) : Update(UpdateType.PlayerUpdate)
 
 fun main() {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
-    embeddedServer(Netty, host = "localhost", port = 8080) {
+    embeddedServer(Netty, host = "localhost", port = 8084) {
         val game = Game()
 
         install(WebSockets)

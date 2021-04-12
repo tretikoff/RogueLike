@@ -1,9 +1,17 @@
-package com.bomjRogue
+package com.bomjRogue.game
 
-import kotlinx.coroutines.*
+import com.bomjRogue.PlayerUpdate
+import com.bomjRogue.Update
+import com.bomjRogue.character.*
+import com.bomjRogue.world.*
+import com.bomjRogue.world.interactive.ExitDoor
+import com.bomjRogue.world.interactive.Health
+import com.bomjRogue.world.interactive.Item
+import com.bomjRogue.world.interactive.Sword
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.collections.HashMap
 import kotlin.random.Random
 
 class Game {
