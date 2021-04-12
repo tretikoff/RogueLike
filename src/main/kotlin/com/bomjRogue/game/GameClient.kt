@@ -16,6 +16,7 @@ import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.UpdateType
 import com.bomjRogue.character.Character
+import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
 import com.bomjRogue.game.command.MoveCommand
 import com.bomjRogue.world.Position
@@ -157,6 +158,20 @@ class GameClient : KtxApplicationAdapter {
         }
     }
 
+    private fun deathRequest() {
+        runBlocking {
+            val request = DeathCommand(playerName)
+            try {
+                client.post<DeathCommand>("/respawn") {
+                    body = request
+                    contentType(ContentType.Application.Json)
+                }
+            } catch (e: NoTransformationFoundException) {
+                //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
+            }
+        }
+    }
+
     private fun makeMove(x: Float, y: Float) {
         runBlocking {
             val request = MoveCommand(playerName, x, y)
@@ -172,6 +187,10 @@ class GameClient : KtxApplicationAdapter {
     }
 
     private fun handleInput() {
+        if (player!!.isDead()) {
+            deathRequest()
+            return
+        }
         val step = 3f
         val x = when {
             Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT) -> -step
@@ -233,12 +252,13 @@ class GameClient : KtxApplicationAdapter {
         }
     }
 
-    private fun drawInfo() {
+    private fun drawInfo(eventInfo: String? = null) {
         spriteBatch.begin()
         val font = BitmapFont()
+        val toDraw = eventInfo ?: "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
         textLayout.setText(
             font,
-            "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
+            toDraw
         )
         font.draw(spriteBatch, textLayout, 950f, 710f)
         spriteBatch.end()

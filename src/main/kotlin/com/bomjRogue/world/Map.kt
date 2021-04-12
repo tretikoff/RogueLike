@@ -20,6 +20,12 @@ data class Size(val height: Float, val width: Float)
 data class Position(val coordinates: Coordinates, val size: Size)
 
 class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, private val mapWidth: Float) {
+
+    companion object PredefinedCoords {
+        val playerSpawn = Position(Coordinates(20f, 20f), Size(34f, 19f))
+        val doorSpawn = Position(Coordinates(1220f, 10f), Size(46f, 32f))
+    }
+
     private val reachableHeight = mapHeight - 70
 
     var location: GameItems = HashMap(walls)

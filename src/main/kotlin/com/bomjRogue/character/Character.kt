@@ -28,6 +28,8 @@ open class Character(val name: String, private val characteristics: Characterist
         return characteristics.getCharacteristic(CharacteristicType.Health)
     }
 
+    fun isDead(): Boolean = characteristics.getCharacteristic(CharacteristicType.Health) <= 0
+
     fun addHealth(health: Int) {
         characteristics.setCharacteristic(CharacteristicType.Health, min(getHealth() + health, 100))
     }

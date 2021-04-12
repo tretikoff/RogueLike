@@ -2,6 +2,7 @@ package com.bomjRogue
 
 import com.bomjRogue.character.Player
 import com.bomjRogue.game.Game
+import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
 import com.bomjRogue.game.command.MoveCommand
 import com.bomjRogue.world.GameItems
@@ -68,6 +69,11 @@ fun main() {
             post("/hit") {
                 val data = call.receive<HitCommand>()
                 game.hit(data.playerName)
+                call.respond(HttpStatusCode.Accepted)
+            }
+            post("/respawn") {
+                val data = call.receive<DeathCommand>()
+                game.respawn(data.playerName)
                 call.respond(HttpStatusCode.Accepted)
             }
             get("/join") {

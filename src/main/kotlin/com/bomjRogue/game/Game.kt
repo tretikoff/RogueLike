@@ -4,6 +4,8 @@ import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.character.*
 import com.bomjRogue.world.*
+import com.bomjRogue.world.Map.PredefinedCoords.doorSpawn
+import com.bomjRogue.world.Map.PredefinedCoords.playerSpawn
 import com.bomjRogue.world.interactive.ExitDoor
 import com.bomjRogue.world.interactive.Health
 import com.bomjRogue.world.interactive.Item
@@ -74,6 +76,17 @@ class Game {
         }
     }
 
+    fun respawn(name: String) {
+        val player = players.firstOrNull { it.name == name } ?: return
+        if (players.size < 2) {
+            initialize(true)
+            return
+        }
+        player.reset()
+        map.remove(player)
+        map.add(player, playerSpawn)
+    }
+
     fun hit(name: String) {
         val player = players.firstOrNull { it.name == name } ?: return
         makeDamage(player)
@@ -89,7 +102,7 @@ class Game {
         players.forEach {
             map.add(it, Position(Coordinates(20f, 20f), Size(34f, 19f)))
         }
-        map.add(exitDoor, Position(Coordinates(1220f, 10f), Size(46f, 32f)))
+        map.add(exitDoor, doorSpawn)
     }
 
     private fun initializeItems() {
@@ -126,19 +139,21 @@ class Game {
 
     fun makeDamage(hitman: Character): Boolean {
         var noDamage = true
-        for (pl in npcs + players) {
+        for (pl in npcs + players) { // todo: sync state
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
                 if (pl is Player) {
                     addUpdate(PlayerUpdate(pl))
                 }
                 noDamage = false
                 pl.takeDamage(hitman.getForce())
-                if (pl.getHealth() < 0) {
+                if (pl.getHealth() <= 0 ) {
                     map.remove(pl)
-                    npcs.remove(pl)
-                    if (players.count() == 0) {
-                        npcCount = defaultNpcCount
-                        initialize()
+                    if (pl is Npc) {
+                        npcs.remove(pl)
+                    }
+                    if (pl is Player) {
+                        respawn(pl.name)
+                        run()
                     }
                 }
             }
@@ -154,6 +169,9 @@ class Game {
     private fun moveNpcs() {
         for (npc in npcs) {
             for (player in players) {
+                if (player.isDead()) {
+                    continue
+                }
                 if (map.objectsConnect(npc, player)) {
                     if (Random.nextInt(100) < 5) {
                         makeDamage(npc)

@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 enum class CommandType {
     Move,
-    Hit
+    Hit,
+    Respawn
 }
 
 @Serializable
@@ -15,3 +16,6 @@ class MoveCommand(val playerName: String, val x: Float, val y: Float) : Command(
 
 @Serializable
 class HitCommand(val playerName: String): Command(CommandType.Hit)
+
+@Serializable
+class DeathCommand(val playerName: String): Command(CommandType.Respawn)
