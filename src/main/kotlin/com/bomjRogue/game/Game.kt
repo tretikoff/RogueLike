@@ -218,4 +218,13 @@ class Game {
             map.remove(it)
         }
     }
+
+    fun processDisconnect(playerToRemove: String) {
+        val player = players.find {
+            it.name == playerToRemove
+        }
+        if (player != null) {
+            map.remove(player)
+        }
+    }
 }

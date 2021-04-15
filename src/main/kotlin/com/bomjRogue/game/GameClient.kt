@@ -57,6 +57,8 @@ class GameClient : KtxApplicationAdapter {
     private var gameItems = mutableMapOf<GameObject, Position>()
     private val sprites = mutableMapOf<ObjectType, Texture>()
 
+
+    private var disconnectRequest = false
     private lateinit var music: Sound
     private var volume = 0.05f
     private lateinit var hitBodySound: Sound
@@ -69,6 +71,19 @@ class GameClient : KtxApplicationAdapter {
         defaultRequest {
             host = "localhost"
             port = 8084
+        }
+    }
+
+    private fun exit() {
+        runBlocking {
+            try {
+                client.post<Character>("/disconnect") {
+                    parameter("player", playerName)
+                    accept(ContentType.Any)
+                }
+            } catch (e: NoTransformationFoundException) {
+                //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
+            }
         }
     }
 
@@ -106,6 +121,12 @@ class GameClient : KtxApplicationAdapter {
                 }
             }
         }
+    }
+
+    override fun dispose() {
+        disconnectRequest = true
+        exit()
+        super.dispose()
     }
 
     override fun create() {
@@ -191,10 +212,6 @@ class GameClient : KtxApplicationAdapter {
             } catch (e: NoTransformationFoundException) {
                 //https://stackoverflow.com/questions/65105118/no-transformation-found-class-io-ktor-utils-io-bytechannelnative-error-using
             }
-        }
-        //todo: add ma here
-        for (item in gameItems) {
-
         }
     }
 

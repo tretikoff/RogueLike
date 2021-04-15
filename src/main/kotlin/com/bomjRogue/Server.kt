@@ -90,6 +90,15 @@ fun main() {
                     println(e)
                 }
             }
+            post("/disconnect") {
+                val data = call.request.queryParameters["player"]
+                if (data != null) {
+                    game.processDisconnect(data)
+                    call.respond(HttpStatusCode.Accepted)
+                } else {
+                    call.respond(HttpStatusCode.Conflict, "Name is not recieved")
+                }
+            }
         }
     }.start(wait = true)
 }
