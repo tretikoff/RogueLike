@@ -58,7 +58,6 @@ class GameClient : KtxApplicationAdapter {
     private val sprites = mutableMapOf<ObjectType, Texture>()
 
 
-    private var disconnectRequest = false
     private lateinit var music: Sound
     private var volume = 0.05f
     private lateinit var hitBodySound: Sound
@@ -124,7 +123,6 @@ class GameClient : KtxApplicationAdapter {
     }
 
     override fun dispose() {
-        disconnectRequest = true
         exit()
         super.dispose()
     }

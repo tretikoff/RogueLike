@@ -220,11 +220,19 @@ class Game {
     }
 
     fun processDisconnect(playerToRemove: String) {
-        val player = players.find {
-            it.name == playerToRemove
+        var ind = 0
+        var foundPlayer: Player? = null
+        for (player in players) {
+            if (player.name == playerToRemove) {
+                foundPlayer = player
+                break
+            }
+            ind ++
         }
-        if (player != null) {
-            map.remove(player)
-        }
+
+        if (foundPlayer != null) {
+            map.remove(foundPlayer)
+            players.removeAt(ind)
+         }
     }
 }
