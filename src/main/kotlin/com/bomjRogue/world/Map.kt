@@ -1,8 +1,11 @@
 package com.bomjRogue.world
 
+import com.bomjRogue.game.Direction
 import com.bomjRogue.world.interactive.GameObject
 import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
+import kotlin.math.atan2
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 typealias GameItems = MutableMap<GameObject, Position>
@@ -19,7 +22,8 @@ data class Size(val height: Float, val width: Float)
 @Serializable
 data class Position(val coordinates: Coordinates, val size: Size)
 
-class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, private val mapWidth: Float) {
+
+class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val mapWidth: Float) {
 
     companion object PredefinedCoords {
         val playerSpawn = Position(Coordinates(20f, 20f), Size(34f, 19f))
@@ -45,6 +49,51 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, priva
             add(obj, Position(coordinates, size))
         } while (clashesWithWalls(obj))
     }
+
+    private fun getDistance(lhs: GameObject, rhs: GameObject): Float {
+        val (x, y) = getPosition(lhs).coordinates
+        val (h, w) = getPosition(lhs).size
+        val (x2, y2) = getPosition(rhs).coordinates
+        val (h2, w2) = getPosition(rhs).size
+
+        return sqrt((x - x2 + w + w2)*(x - x2 + w + w2) + (y - y2 + h + h2)*(y - y2 + h + h2))
+    }
+
+    fun isClose(lhs: GameObject, rhs: GameObject, threshold: Double): Boolean {
+        return getDistance(lhs, rhs) <= threshold
+    }
+
+    fun getDirection(x: Float, y: Float): Direction {
+        if (x == 0f && y == 0f) {
+            return Direction.None
+        }
+
+        val angle = atan2(y.toDouble(), x.toDouble())
+        var degree = Math.toDegrees(angle)
+        degree += 450.0
+        degree %= 360.0
+
+        return if (degree < 22.5) {
+            Direction.Down
+//        } else if (degree < 67.5) {
+//            Down_right
+        } else if (degree < 112.5) {
+            Direction.Right
+//        } else if (degree < 157.5) {
+//            Up_Right
+        } else if (degree < 202.5) {
+            Direction.Up
+//        } else if (degree < 247.5) {
+//            Up_Left
+        } else if (degree < 292.5) {
+            Direction.Left
+//        } else if (degree < 337.5) {
+//            Down_left
+        } else {
+            Direction.Up
+        }
+    }
+
 
     fun objectsConnect(obj1: GameObject, obj2: GameObject): Boolean {
         val (x, y) = getPosition(obj1).coordinates

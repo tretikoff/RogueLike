@@ -41,4 +41,19 @@ open class Character(val name: String, private val characteristics: Characterist
     fun reset() {
         characteristics.reset()
     }
+
+    fun getCoordinateMoveDirection(): Pair<Float, Float> {
+        val x = when (direction) {
+            Direction.Left -> -1f
+            Direction.Right -> +1f
+            else -> 0f
+        }
+        val y = when (direction) {
+            Direction.Down -> +1f
+            Direction.Up -> -1f
+            else -> 0f
+        }
+        return Pair(x, y)
+    }
+
 }

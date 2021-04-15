@@ -6,6 +6,7 @@ import com.bomjRogue.Update
 import com.bomjRogue.character.*
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
+import com.bomjRogue.game.strategy.StrategyFactory
 import com.bomjRogue.world.*
 import com.bomjRogue.world.Map.PredefinedCoords.doorSpawn
 import com.bomjRogue.world.Map.PredefinedCoords.playerSpawn
@@ -36,6 +37,7 @@ class Game {
     private var items = mutableListOf<Item>()
     private var updates = mutableListOf<Update>()
     private val updatesMutex = Mutex()
+    private val strategyFactory = StrategyFactory.init(map)
 
     private fun addUpdate(update: Update) {
         runBlocking {
@@ -97,6 +99,7 @@ class Game {
 
     fun initialize(reset: Boolean = true) {
         map.reset()
+        strategyFactory.updateMap(map)
         initializeNpcs()
         initializeItems()
         if (reset) {
@@ -133,7 +136,8 @@ class Game {
                             CharacteristicType.Armor to 10,
                             CharacteristicType.Force to 20
                         )
-                    )
+                    ),
+//                    strategyFactory.getStrategy()
                 )
             )
         }
@@ -186,16 +190,7 @@ class Game {
             if (Random.nextInt(100) < 5) {
                 npc.direction = Direction.values()[Random.nextInt(4)]
             } else {
-                val x = when (npc.direction) {
-                    Direction.Left -> -1f
-                    Direction.Right -> +1f
-                    else -> 0f
-                }
-                val y = when (npc.direction) {
-                    Direction.Down -> +1f
-                    Direction.Up -> -1f
-                    else -> 0f
-                }
+                val (x, y) = npc.getCoordinateMoveDirection()
                 map.move(npc, x, y)
             }
         }
