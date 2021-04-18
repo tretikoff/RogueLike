@@ -50,7 +50,7 @@ class NpcManager {
             return Npc(getRandName(), Characteristics(stats))
         }
 
-        private fun getRegularStats(): MutableMap<CharacteristicType, Int> {
+        fun getRegularStats(): MutableMap<CharacteristicType, Int> {
             return mutableMapOf(
                 CharacteristicType.Health to defaultHealth,
                 CharacteristicType.Armor to defaultArmor,
@@ -105,7 +105,7 @@ class NpcManager {
     private val npcConfigurator = NpcConfigurer()
     private val npcCreator = NpcCreator()
 
-    fun init(npcList: MutableList<Npc>) {
+    fun initWith(npcList: MutableList<Npc>) {
         npcs = npcList
         initStrategies()
     }
@@ -118,6 +118,8 @@ class NpcManager {
             }
         }
     }
+
+    fun getDefaultStats(): Characteristics = Characteristics(npcCreator.getRegularStats())
 
     fun getRandomNpc(): Npc {
         return npcCreator.getRandomNpc()
@@ -150,6 +152,7 @@ class NpcManager {
         return strategies[npc]
     }
 
+    fun getNpcList() = npcs
 
     fun remove(obj: Npc) {
         strategies.remove(obj)

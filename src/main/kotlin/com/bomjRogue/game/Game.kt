@@ -3,7 +3,9 @@ package com.bomjRogue.game
 import com.bomjRogue.MusicUpdate
 import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
-import com.bomjRogue.character.*
+import com.bomjRogue.character.Character
+import com.bomjRogue.character.Npc
+import com.bomjRogue.character.Player
 import com.bomjRogue.character.manager.NpcManager
 import com.bomjRogue.character.manager.PlayersManager
 import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
@@ -36,7 +38,6 @@ class Game {
     private val exitDoor = ExitDoor()
     private var npcCount = defaultNpcCount
     private val map = LevelGenerator.generateMap()
-    private var npcs = mutableListOf<Npc>()
     private var items = mutableListOf<Item>()
     private var updates = mutableListOf<Update>()
     private val updatesMutex = Mutex()
@@ -62,13 +63,8 @@ class Game {
 
     fun join(playerName: String): Character {
         val player = Player(
-            playerName, Characteristics(
-                mutableMapOf(
-                    CharacteristicType.Health to 100,
-                    CharacteristicType.Armor to 10,
-                    CharacteristicType.Force to 20
-                )
-            ), // todo : fix bug with transportation
+            playerName, npcManager.getDefaultStats()
+            , // todo : we can store it inside and fix bug with transportation
 //            HeroInventoryManager()
         )
         playersManager.addPlayer(player)
@@ -82,7 +78,7 @@ class Game {
         val player = players.firstOrNull { it.myName == name } ?: return
         map.move(player, x, y)
         if (map.objectsConnect(player, exitDoor)) {
-            if (npcs.isNotEmpty()) {
+            if (npcManager.getNpcList().isNotEmpty()) {
                 npcCount++
             }
             initialize(false)
@@ -136,16 +132,15 @@ class Game {
     }
 
     private fun initializeNpcs() {
-        npcs.clear()
-        npcs = npcManager.getRandomNpcForCount(defaultNpcCount)
-        npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
-        npcManager.init(npcs)
+        val newNpc = npcManager.getRandomNpcForCount(defaultNpcCount)
+        newNpc.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
+        npcManager.initWith(newNpc)
 //        npcManager.configureNpc(npcs.first()).setAllHunt() // just for test
     }
 
     fun makeDamage(hitman: Character): Boolean {
         var noDamage = true
-        for (pl in npcs + players) { // todo: sync state
+        for (pl in npcManager.getNpcList() + players) { // todo: sync state
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
                 if (pl is Player) {
                     addUpdate(PlayerUpdate(pl))
@@ -160,7 +155,8 @@ class Game {
                 if (pl.getHealth() <= 0 ) {
                     map.remove(pl)
                     if (pl is Npc) {
-                        npcs.remove(pl)
+                        npcManager.remove(pl)
+//                        npcs.remove(pl)
                         continue
                     }
                     if (pl is Player) {
@@ -179,7 +175,7 @@ class Game {
     }
 
     private fun moveNpcs() {
-        for (npc in npcs) {
+        for (npc in npcManager.getNpcList()) {
             for (player in players) {
                 if (player.isDead()) {
                     continue
