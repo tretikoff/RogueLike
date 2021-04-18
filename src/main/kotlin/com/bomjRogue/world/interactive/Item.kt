@@ -2,6 +2,7 @@ package com.bomjRogue.world.interactive
 
 abstract class Item(type: ObjectType): GameObject(type)
 
+
 class Sword(val damage: Int) : Item(ObjectType.Sword)
 
 class ExitDoor: Item(ObjectType.ExitDoor)

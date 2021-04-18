@@ -5,7 +5,9 @@ import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.character.*
 import com.bomjRogue.character.manager.NpcManager
+import com.bomjRogue.character.manager.PlayersManager
 import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
+import com.bomjRogue.config.SettingsManager.Companion.defaultSword
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.game.strategy.StrategyFactory
@@ -40,7 +42,7 @@ class Game {
     private val updatesMutex = Mutex()
     private val strategyFactory = StrategyFactory.init(map)
     private val npcManager = NpcManager()
-
+    private val playersManager = PlayersManager() // i know it might be not the best
 
     private fun addUpdate(update: Update) {
         runBlocking {
@@ -66,15 +68,18 @@ class Game {
                     CharacteristicType.Armor to 10,
                     CharacteristicType.Force to 20
                 )
-            )
+            ), // todo : fix bug with transportation
+//            HeroInventoryManager()
         )
+        playersManager.addPlayer(player)
+        playersManager.takeItem(player, defaultSword)
         players.add(player)
         map.add(player, Position(Coordinates(20f, 20f), Size(34f, 19f)))
         return player
     }
 
     fun makeMove(name: String, x: Float, y: Float) {
-        val player = players.firstOrNull { it.name == name } ?: return
+        val player = players.firstOrNull { it.myName == name } ?: return
         map.move(player, x, y)
         if (map.objectsConnect(player, exitDoor)) {
             if (npcs.isNotEmpty()) {
@@ -85,18 +90,20 @@ class Game {
     }
 
     fun respawn(name: String) {
-        val player = players.firstOrNull { it.name == name } ?: return
+        val player = players.firstOrNull { it.myName == name } ?: return
         if (players.size < 2) {
             initialize(true)
             return
         }
         player.reset()
+        playersManager.resetInventory(player)
+        playersManager.takeItem(player, defaultSword)
         map.remove(player)
         map.add(player, playerSpawn)
     }
 
     fun hit(name: String) {
-        val player = players.firstOrNull { it.name == name } ?: return
+        val player = players.firstOrNull { it.myName == name } ?: return
         makeDamage(player)
     }
 
@@ -116,7 +123,7 @@ class Game {
 
     private fun initializeItems() {
         items.clear()
-        val weapon = Sword(5)
+        val weapon = Sword(10)
         val health = Health(50)
         items.add(weapon)
         items.add(health)
@@ -145,6 +152,10 @@ class Game {
                     addUpdate(MusicUpdate(fleshHitSoundName))
                 }
                 noDamage = false
+                var damage = hitman.getForce()
+                if (hitman is Player) {
+                  damage += playersManager.itemDamage(hitman)
+                }
                 pl.takeDamage(hitman.getForce())
                 if (pl.getHealth() <= 0 ) {
                     map.remove(pl)
@@ -192,7 +203,11 @@ class Game {
                     if (item is Health) {
                         player.addHealth(item.healthPoints)
                     } else if (item is Sword) {
-                        player.addForce(item.damage)
+                        if (!playersManager.canPickUp(player)) {
+                            continue
+                        }
+                        playersManager.takeItem(player, item)
+//                        player.addForce(item.damage)
                     }
                     addUpdate(PlayerUpdate(player))
                     addUpdate(MusicUpdate(itemPickUpSoundName))
@@ -210,7 +225,7 @@ class Game {
         var ind = 0
         var foundPlayer: Player? = null
         for (player in players) {
-            if (player.name == playerToRemove) {
+            if (player.myName == playerToRemove) {
                 foundPlayer = player
                 break
             }
@@ -220,6 +235,7 @@ class Game {
         if (foundPlayer != null) {
             map.remove(foundPlayer)
             players.removeAt(ind)
+            playersManager.removePlayer(foundPlayer)
          }
     }
 }

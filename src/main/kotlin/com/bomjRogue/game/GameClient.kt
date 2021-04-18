@@ -108,7 +108,7 @@ class GameClient : KtxApplicationAdapter {
                         }
                         UpdateType.PlayerUpdate -> {
                             val update: PlayerUpdate = gson.fromJson(text, object : TypeToken<PlayerUpdate>() {}.type)
-                            if (update.player.name == playerName) {
+                            if (update.player.myName == playerName) {
                                 player = update.player
                             }
                         }

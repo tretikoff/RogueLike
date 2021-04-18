@@ -3,6 +3,7 @@ package com.bomjRogue.config
 import com.bomjRogue.game.strategy.HuntMovement
 import com.bomjRogue.game.strategy.RandomMovement
 import com.bomjRogue.game.strategy.Strategy
+import com.bomjRogue.world.interactive.Sword
 import kotlin.reflect.KClass
 
 class Utils {
@@ -26,5 +27,6 @@ class SettingsManager {
         const val defaultHealth = 100
         const val defaultArmor = 10
         const val defaultForce = 20
+        val defaultSword = Sword(5)
     }
 }
