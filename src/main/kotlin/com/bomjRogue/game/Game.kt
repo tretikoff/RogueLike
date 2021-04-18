@@ -5,6 +5,7 @@ import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.character.*
 import com.bomjRogue.character.manager.NpcManager
+import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.game.strategy.StrategyFactory
@@ -31,7 +32,6 @@ class Game {
 
     private val players = mutableListOf<Player>()
     private val exitDoor = ExitDoor()
-    private val defaultNpcCount = 5
     private var npcCount = defaultNpcCount
     private val map = LevelGenerator.generateMap()
     private var npcs = mutableListOf<Npc>()
@@ -130,19 +130,7 @@ class Game {
 
     private fun initializeNpcs() {
         npcs.clear()
-        for (i in 0 until npcCount) {
-            npcs.add(
-                Npc(
-                    "Npc_$i", Characteristics(
-                        mutableMapOf(
-                            CharacteristicType.Health to 100,
-                            CharacteristicType.Armor to 10,
-                            CharacteristicType.Force to 20
-                        )
-                    ),
-                )
-            )
-        }
+        npcs = npcManager.getRandomNpcForCount(defaultNpcCount)
         npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
         npcManager.init(npcs)
 //        npcManager.configureNpc(npcs.first()).setAllHunt() // just for test
