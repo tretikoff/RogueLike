@@ -69,13 +69,12 @@ class Game {
         )
         playersManager.addPlayer(player)
         playersManager.takeItem(player, defaultSword)
-        players.add(player)
         map.add(player, Position(Coordinates(20f, 20f), Size(34f, 19f)))
         return player
     }
 
     fun makeMove(name: String, x: Float, y: Float) {
-        val player = players.firstOrNull { it.myName == name } ?: return
+        val player = playersManager.getPlayers().firstOrNull { it.myName == name } ?: return
         map.move(player, x, y)
         if (map.objectsConnect(player, exitDoor)) {
             if (npcManager.getNpcList().isNotEmpty()) {
@@ -86,6 +85,7 @@ class Game {
     }
 
     fun respawn(name: String) {
+        val players = playersManager.getPlayers()
         val player = players.firstOrNull { it.myName == name } ?: return
         if (players.size < 2) {
             initialize(true)
@@ -99,7 +99,7 @@ class Game {
     }
 
     fun hit(name: String) {
-        val player = players.firstOrNull { it.myName == name } ?: return
+        val player = playersManager.getPlayers().firstOrNull { it.myName == name } ?: return
         makeDamage(player)
     }
 
@@ -108,6 +108,7 @@ class Game {
         strategyFactory.updateMap(map)
         initializeNpcs()
         initializeItems()
+        val players = playersManager.getPlayers()
         if (reset) {
             players.forEach { it.reset() }
         }
@@ -140,7 +141,7 @@ class Game {
 
     fun makeDamage(hitman: Character): Boolean {
         var noDamage = true
-        for (pl in npcManager.getNpcList() + players) { // todo: sync state
+        for (pl in npcManager.getNpcList() + playersManager.getPlayers()) { // todo: sync state
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
                 if (pl is Player) {
                     addUpdate(PlayerUpdate(pl))
@@ -156,7 +157,6 @@ class Game {
                     map.remove(pl)
                     if (pl is Npc) {
                         npcManager.remove(pl)
-//                        npcs.remove(pl)
                         continue
                     }
                     if (pl is Player) {
@@ -176,7 +176,7 @@ class Game {
 
     private fun moveNpcs() {
         for (npc in npcManager.getNpcList()) {
-            for (player in players) {
+            for (player in playersManager.getPlayers()) {
                 if (player.isDead()) {
                     continue
                 }
@@ -194,7 +194,7 @@ class Game {
     private fun pickItems() {
         val toRemove = mutableListOf<Item>()
         for (item in items) {
-            for (player in players) {
+            for (player in playersManager.getPlayers()) {
                 if (map.objectsConnect(item, player)) {
                     if (item is Health) {
                         player.addHealth(item.healthPoints)
@@ -203,7 +203,6 @@ class Game {
                             continue
                         }
                         playersManager.takeItem(player, item)
-//                        player.addForce(item.damage)
                     }
                     addUpdate(PlayerUpdate(player))
                     addUpdate(MusicUpdate(itemPickUpSoundName))
@@ -218,20 +217,15 @@ class Game {
     }
 
     fun processDisconnect(playerToRemove: String) {
-        var ind = 0
-        var foundPlayer: Player? = null
-        for (player in players) {
-            if (player.myName == playerToRemove) {
-                foundPlayer = player
-                break
-            }
-            ind ++
+        val foundPlayer: Player?
+        val players = playersManager.getPlayers()
+        foundPlayer = players.find {
+            it.myName == playerToRemove
         }
-
         if (foundPlayer != null) {
             map.remove(foundPlayer)
-            players.removeAt(ind)
             playersManager.removePlayer(foundPlayer)
-         }
+        }
+
     }
 }

@@ -110,7 +110,7 @@ class NpcManager {
         initStrategies()
     }
 
-    private fun initStrategies(params: List<out Strategy> = emptyList()) {
+    private fun initStrategies(params: List<Class<out Strategy>> = emptyList()) {
         val factory = StrategyFactory.INSTANCE
         if (params.isEmpty()) {
             npcs.forEach {

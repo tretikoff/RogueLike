@@ -25,6 +25,8 @@ class PlayersManager {
         return true
     }
 
+    fun getPlayers() = playerSet
+
     fun canPickUp(player: Player): Boolean = mapper[player]!!.isNotFull()
 
     fun takeItem(player: Player,item: Item) {
