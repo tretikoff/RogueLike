@@ -4,6 +4,7 @@ import com.bomjRogue.MusicUpdate
 import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
 import com.bomjRogue.character.*
+import com.bomjRogue.character.manager.NpcManager
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.game.strategy.StrategyFactory
@@ -38,6 +39,8 @@ class Game {
     private var updates = mutableListOf<Update>()
     private val updatesMutex = Mutex()
     private val strategyFactory = StrategyFactory.init(map)
+    private val npcManager = NpcManager()
+
 
     private fun addUpdate(update: Update) {
         runBlocking {
@@ -137,11 +140,12 @@ class Game {
                             CharacteristicType.Force to 20
                         )
                     ),
-//                    strategyFactory.getStrategy()
                 )
             )
         }
         npcs.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
+        npcManager.init(npcs)
+//        npcManager.configureNpc(npcs.first()).setAllHunt() // just for test
     }
 
     fun makeDamage(hitman: Character): Boolean {
@@ -187,12 +191,7 @@ class Game {
                     }
                 }
             }
-            if (Random.nextInt(100) < 5) {
-                npc.direction = Direction.values()[Random.nextInt(4)]
-            } else {
-                val (x, y) = npc.getCoordinateMoveDirection()
-                map.move(npc, x, y)
-            }
+            npcManager.makeMoveNpc(npc)
         }
     }
 

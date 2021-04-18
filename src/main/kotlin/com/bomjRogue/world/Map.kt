@@ -4,7 +4,7 @@ import com.bomjRogue.game.Direction
 import com.bomjRogue.world.interactive.GameObject
 import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
-import kotlin.math.atan2
+import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -60,7 +60,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
     }
 
     fun isClose(lhs: GameObject, rhs: GameObject, threshold: Double): Boolean {
-        return getDistance(lhs, rhs) <= threshold
+        return getDistance(lhs, rhs) <= threshold * 2
     }
 
     fun getDirection(x: Float, y: Float): Direction {
@@ -68,30 +68,29 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
             return Direction.None
         }
 
-        val angle = atan2(y.toDouble(), x.toDouble())
-        var degree = Math.toDegrees(angle)
-        degree += 450.0
-        degree %= 360.0
+        val absX = abs(x).toInt()
 
-        return if (degree < 22.5) {
-            Direction.Down
-//        } else if (degree < 67.5) {
-//            Down_right
-        } else if (degree < 112.5) {
-            Direction.Right
-//        } else if (degree < 157.5) {
-//            Up_Right
-        } else if (degree < 202.5) {
-            Direction.Up
-//        } else if (degree < 247.5) {
-//            Up_Left
-        } else if (degree < 292.5) {
-            Direction.Left
-//        } else if (degree < 337.5) {
-//            Down_left
-        } else {
-            Direction.Up
+        if (y > absX) {
+            return Direction.Down
         }
+
+        val absY = abs(y).toInt()
+
+        if (absY > absX) {
+            return Direction.Up
+        }
+
+        if (x > 0) {
+            return if (-y == x) {
+                Direction.Down
+            } else Direction.Right
+        }
+
+        if (y < 0 && y == x) return Direction.Down
+
+        return if (y == x) {
+            Direction.Down
+        } else Direction.Left
     }
 
 
