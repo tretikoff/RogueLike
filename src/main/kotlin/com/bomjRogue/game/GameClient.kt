@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Pools
 import com.bomjRogue.*
 import com.bomjRogue.character.Character
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
+import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.config.Utils.Companion.swordHitSoundName
 import com.bomjRogue.game.command.DeathCommand
@@ -63,6 +64,7 @@ class GameClient : KtxApplicationAdapter {
     private lateinit var hitBodySound: Sound
     private lateinit var swordGetSound: Sound
     private lateinit var hitSound: Sound
+    private lateinit var healthSound: Sound
     private lateinit var knownSounds: Map<String, Sound>
     private val client = HttpClient(CIO) {
         install(JsonFeature)
@@ -149,8 +151,9 @@ class GameClient : KtxApplicationAdapter {
         hitBodySound = load(fleshHitSoundName)
         swordGetSound = load(itemPickUpSoundName)
         hitSound = load(swordHitSoundName)
+        healthSound = load(healthPickUpSoundName)
         knownSounds = mapOf(fleshHitSoundName to hitBodySound,
-        itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound)
+        itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound, healthPickUpSoundName to healthSound)
         music.loop(volume)
     }
 

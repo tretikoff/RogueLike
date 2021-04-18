@@ -11,6 +11,7 @@ class Utils {
         const val fleshHitSoundName = "hit_body.mp3"
         const val swordHitSoundName = "hit.mp3"
         const val itemPickUpSoundName = "sword_get.mp3"
+        const val healthPickUpSoundName = "health_up.mp3"
 //        const val enemySlayedSoundName = "sword_get.mp3" // todo
     }
 }

@@ -11,6 +11,7 @@ import com.bomjRogue.character.manager.PlayersManager
 import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
 import com.bomjRogue.config.SettingsManager.Companion.defaultSword
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
+import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
 import com.bomjRogue.game.strategy.StrategyFactory
 import com.bomjRogue.world.*
@@ -198,14 +199,15 @@ class Game {
                 if (map.objectsConnect(item, player)) {
                     if (item is Health) {
                         player.addHealth(item.healthPoints)
+                        addUpdate(MusicUpdate(healthPickUpSoundName))
                     } else if (item is Sword) {
                         if (!playersManager.canPickUp(player)) {
                             continue
                         }
                         playersManager.takeItem(player, item)
+                        addUpdate(MusicUpdate(itemPickUpSoundName))
                     }
                     addUpdate(PlayerUpdate(player))
-                    addUpdate(MusicUpdate(itemPickUpSoundName))
                     toRemove.add(item)
                 }
             }
