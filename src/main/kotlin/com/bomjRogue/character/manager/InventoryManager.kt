@@ -54,6 +54,4 @@ class HeroInventoryManager : InventoryManager() {
             }
         }
     }
-
-
 }

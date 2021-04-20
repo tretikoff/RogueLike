@@ -1,7 +1,7 @@
 package com.bomjRogue.config
 
-import com.bomjRogue.game.strategy.HuntMovement
-import com.bomjRogue.game.strategy.RandomMovement
+import com.bomjRogue.game.strategy.AggressiveMovement
+import com.bomjRogue.game.strategy.PassiveMovement
 import com.bomjRogue.game.strategy.Strategy
 import com.bomjRogue.world.interactive.Sword
 import kotlin.reflect.KClass
@@ -17,14 +17,15 @@ class Utils {
 }
 
 enum class Strategies(val strategy: KClass<out Strategy>) {
-    DEFAULT(RandomMovement::class),
-    HUNT(HuntMovement::class)
+    DEFAULT(PassiveMovement::class),
+    HUNT(AggressiveMovement::class)
 }
 
 class SettingsManager {
     companion object {
         const val defaultNpcCount = 5
         val defaultStrategy = Strategies.DEFAULT
+        const val defaultDetectRadius = 55.0
         const val defaultHealth = 100
         const val defaultArmor = 10
         const val defaultForce = 20

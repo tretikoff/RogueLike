@@ -27,19 +27,19 @@ class StrategyFactory private constructor(private var map: Map? = null) {
     }
 
     fun getStrategy(strategyClass: Class<out Strategy> = SettingsManager.defaultStrategy.strategy.java): Strategy {
-        return if (strategyClass == RandomMovement::class.java) {
+        return if (strategyClass == PassiveMovement::class.java) {
             getRandomMoveStrategy()
         } else {
             getHuntStrategy()
         }
     }
 
-    fun getRandomMoveStrategy(): RandomMovement {
-        return RandomMovement(INSTANCE.map!!)
+    fun getRandomMoveStrategy(): PassiveMovement {
+        return PassiveMovement(INSTANCE.map!!)
     }
 
-    fun getHuntStrategy(): HuntMovement {
-        return HuntMovement(INSTANCE.map!!)
+    fun getHuntStrategy(): AggressiveMovement {
+        return AggressiveMovement(INSTANCE.map!!)
     }
 }
 
@@ -51,7 +51,7 @@ abstract class Strategy internal constructor(protected var map: Map) {
     abstract fun makeMove(character: Character)
 }
 
-open class RandomMovement(map: Map) : Strategy(map = map) {
+open class PassiveMovement(map: Map) : Strategy(map = map) {
     override fun makeMove(character: Character) {
         if (character is Npc) {
             val randValue = Random.nextInt(100)
@@ -68,7 +68,7 @@ open class RandomMovement(map: Map) : Strategy(map = map) {
 }
 
 
-class HuntMovement(map: Map) : RandomMovement(map = map) {
+class AggressiveMovement(map: Map) : PassiveMovement(map = map) {
     private var detectRadius = 55.0
         set(value) {
             if (value > map.mapWidth || value <= 0) {

@@ -1,3 +1,4 @@
+@file:JvmName("Server")
 package com.bomjRogue
 
 import com.bomjRogue.character.Player
@@ -39,7 +40,7 @@ data class MusicUpdate(val soundName: String) : Update(UpdateType.MusicPlay)
 
 fun main() {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
-    embeddedServer(Netty, host = "localhost", port = 8084) {
+    embeddedServer(Netty, host = "127.0.0.1", port = 8084) {
         val game = Game()
 
         install(WebSockets)
@@ -56,7 +57,7 @@ fun main() {
                     val data = gson.toJson(MapUpdate(game.getGameItems()))
                     send(Frame.Text(TextContent(data, ContentType.Any).text))
                     for (update in game.getUpdates()) {
-                    send(Frame.Text(TextContent(data, ContentType.Any).text))
+                        send(Frame.Text(TextContent(data, ContentType.Any).text))
                         send(Frame.Text(TextContent(gson.toJson(update), ContentType.Any).text))
                     }
                     delay(100)
@@ -80,13 +81,13 @@ fun main() {
             get("/join") {
                 try {
 
-                val name = call.request.queryParameters["name"]
-                if (name != null) {
-                    call.respond(HttpStatusCode.Accepted, game.join(name))
-                } else {
-                    call.respond(HttpStatusCode.BadRequest, "Could not join the game")
-                }
-                }catch (e: Exception) {
+                    val name = call.request.queryParameters["name"]
+                    if (name != null) {
+                        call.respond(HttpStatusCode.Accepted, game.join(name))
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest, "Could not join the game")
+                    }
+                } catch (e: Exception) {
                     println(e)
                 }
             }

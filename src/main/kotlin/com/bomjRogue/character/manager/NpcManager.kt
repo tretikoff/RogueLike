@@ -87,13 +87,13 @@ class NpcManager {
         fun setRandom() = strategies.put(currentNpc, StrategyFactory.INSTANCE.getRandomMoveStrategy())
 
         fun setAllRandom() {
-            strategies.replaceAll { t, _ -> StrategyFactory.INSTANCE.getRandomMoveStrategy() }
+            strategies.replaceAll { _, _ -> StrategyFactory.INSTANCE.getRandomMoveStrategy() }
         }
 
         fun setHunt() = strategies.put(currentNpc, StrategyFactory.INSTANCE.getHuntStrategy())
 
         fun setAllHunt() {
-            strategies.replaceAll { t, _ -> StrategyFactory.INSTANCE.getHuntStrategy() }
+            strategies.replaceAll { _, _ -> StrategyFactory.INSTANCE.getHuntStrategy() }
         }
 
         fun getCurrent() = getCurrentStrategy(currentNpc)
