@@ -4,6 +4,8 @@ import kotlinx.serialization.Serializable
 
 enum class ObjectType {
     Npc,
+    AggressiveNpc,
+    CowardNpc,
     Player,
     Sword,
     Health,

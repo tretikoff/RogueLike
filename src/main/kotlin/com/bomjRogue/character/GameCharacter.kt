@@ -31,11 +31,11 @@ import kotlin.math.min
 //
 //}
 
-class Player(val myName: String, myCharacteristics: Characteristics) : Character(myName, myCharacteristics, ObjectType.Player)
+class Player(val myName: String, myCharacteristics: Characteristics) : GameCharacter(myName, myCharacteristics, ObjectType.Player)
 
 
 @Serializable
-open class Character(val name: String, private val characteristics: Characteristics, private val tp: ObjectType) : GameObject(tp) {
+open class GameCharacter(val name: String, private val characteristics: Characteristics, private val tp: ObjectType) : GameObject(tp) {
     var direction: Direction = Direction.Down
 
     fun takeDamage(damage: Int) {

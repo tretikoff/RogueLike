@@ -12,7 +12,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Pools
 import com.bomjRogue.*
-import com.bomjRogue.character.Character
+import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
@@ -50,8 +50,8 @@ class GameClient : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private var textLayout = Pools.obtain(GlyphLayout::class.java)!!
-    private val playerName = UUID.randomUUID().toString()
-    private var player: Character? = null
+    private var firstPlayer: GameCharacter? = null
+    private var secondPlayer: GameCharacter? = null
     private val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
 
     private val manager = AssetManager()
@@ -78,8 +78,8 @@ class GameClient : KtxApplicationAdapter {
     private fun exit() {
         runBlocking {
             try {
-                client.post<Character>("/disconnect") {
-                    parameter("player", playerName)
+                client.post<GameCharacter>("/disconnect") {
+                    parameter("player", firstPlayer!!.name)
                     accept(ContentType.Any)
                 }
             } catch (e: NoTransformationFoundException) {
@@ -88,10 +88,10 @@ class GameClient : KtxApplicationAdapter {
         }
     }
 
-    private suspend fun join() {
-        player = client.get<Character>("/join") {
+    private suspend fun join(): GameCharacter {
+        return client.get("/join") {
             accept(ContentType.Any)
-            parameter("name", playerName)
+            parameter("name", UUID.randomUUID().toString())
         }
     }
 
@@ -110,8 +110,11 @@ class GameClient : KtxApplicationAdapter {
                         }
                         UpdateType.PlayerUpdate -> {
                             val update: PlayerUpdate = gson.fromJson(text, object : TypeToken<PlayerUpdate>() {}.type)
-                            if (update.player.myName == playerName) {
-                                player = update.player
+                            if (update.player.myName == firstPlayer!!.name) {
+                                firstPlayer = update.player
+                            }
+                            if (secondPlayer != null && update.player.myName == secondPlayer!!.name) {
+                                secondPlayer = update.player
                             }
                         }
                         UpdateType.MusicPlay -> {
@@ -143,6 +146,8 @@ class GameClient : KtxApplicationAdapter {
         sprites[ObjectType.Player] = load("player.png")
         sprites[ObjectType.ExitDoor] = load("door.png")
         sprites[ObjectType.Npc] = load("SteamMan.png")
+        sprites[ObjectType.AggressiveNpc] = load("aggressive.png")
+        sprites[ObjectType.CowardNpc] = load("woodcutter.png")
         sprites[ObjectType.Sword] = load("sword.png")
         sprites[ObjectType.Health] = load("health.png")
 // Replace if your PC is strong enough
@@ -152,8 +157,10 @@ class GameClient : KtxApplicationAdapter {
         swordGetSound = load(itemPickUpSoundName)
         hitSound = load(swordHitSoundName)
         healthSound = load(healthPickUpSoundName)
-        knownSounds = mapOf(fleshHitSoundName to hitBodySound,
-        itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound, healthPickUpSoundName to healthSound)
+        knownSounds = mapOf(
+            fleshHitSoundName to hitBodySound,
+            itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound, healthPickUpSoundName to healthSound
+        )
         music.loop(volume)
     }
 
@@ -161,7 +168,7 @@ class GameClient : KtxApplicationAdapter {
         renderer = ShapeRenderer()
         spriteBatch = SpriteBatch()
         runBlocking {
-            join()
+            firstPlayer = join()
         }
         GlobalScope.async {
             receive()
@@ -173,9 +180,9 @@ class GameClient : KtxApplicationAdapter {
         update()
     }
 
-    private fun hit() {
+    private fun hit(player: GameCharacter) {
         runBlocking {
-            val request = HitCommand(playerName)
+            val request = HitCommand(player.name)
             hitSound.play() // anyway
             try {
                 client.post<MoveCommand>("/hit") {
@@ -188,9 +195,9 @@ class GameClient : KtxApplicationAdapter {
         }
     }
 
-    private fun deathRequest() {
+    private fun deathRequest(player: GameCharacter) {
         runBlocking {
-            val request = DeathCommand(playerName)
+            val request = DeathCommand(player.name)
             try {
                 client.post<DeathCommand>("/respawn") {
                     body = request
@@ -202,9 +209,9 @@ class GameClient : KtxApplicationAdapter {
         }
     }
 
-    private fun makeMove(x: Float, y: Float) {
+    private fun makeMove(player: GameCharacter, x: Float, y: Float) {
         runBlocking {
-            val request = MoveCommand(playerName, x, y)
+            val request = MoveCommand(player.name, x, y)
             try {
                 client.post<MoveCommand>("/move") {
                     body = request
@@ -217,32 +224,69 @@ class GameClient : KtxApplicationAdapter {
     }
 
     private fun handleInput() {
-        if (player!!.isDead()) {
-            deathRequest()
+        if (firstPlayer != null && firstPlayer!!.isDead()) {
+            deathRequest(firstPlayer!!)
+            return
+        }
+        if (secondPlayer != null && firstPlayer!!.isDead()) {
+            deathRequest(secondPlayer!!)
             return
         }
         val step = 3f
+        var second = false
         val x = when {
-            Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT) -> +step
+            Gdx.input.isKeyPressed(Input.Keys.A) -> -step
+            Gdx.input.isKeyPressed(Input.Keys.LEFT) -> {
+                second = true
+                -step
+            }
+            Gdx.input.isKeyPressed(Input.Keys.D) -> +step
+            Gdx.input.isKeyPressed(Input.Keys.RIGHT) -> {
+                second = true
+                +step
+            }
             else -> 0f
         }
         val y = when {
-            Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN) -> -step
+            Gdx.input.isKeyPressed(Input.Keys.W) -> +step
+            Gdx.input.isKeyPressed(Input.Keys.UP) -> {
+                second = true
+                +step
+            }
+            Gdx.input.isKeyPressed(Input.Keys.S) -> -step
+            Gdx.input.isKeyPressed(Input.Keys.DOWN) -> {
+                second = true
+                -step
+            }
             else -> 0f
         }
         if (x != 0f || y != 0f) {
-            makeMove(x, y)
+            if (second && secondPlayer != null) {
+                makeMove(secondPlayer!!, x, y)
+            } else {
+                makeMove(firstPlayer!!, x, y)
+            }
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F) || Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            hit()
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            hit(firstPlayer!!)
+        } else if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
+            if (secondPlayer != null) hit(secondPlayer!!) else (hit(firstPlayer!!))
         } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
             volume = max(volume - 0.05f, 0f)
         } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
             volume = min(volume + 0.05f, 1f)
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
+            joinSecondPlayer()
         }
         music.setVolume(0, volume)
+    }
+
+    private fun joinSecondPlayer() {
+        if (secondPlayer == null) {
+            GlobalScope.async {
+                secondPlayer = join()
+            }
+        }
     }
 
     private fun update() {
@@ -255,15 +299,10 @@ class GameClient : KtxApplicationAdapter {
         for (obj in gameItems) {
             val item = obj.key
             val position = obj.value
-//            if (item.type == ObjectType.Player) {
-//                val playerItem = item as Player
-//                if (playerItem.name == playerName) {
-//                    player = playerItem
-//                }
-//            }
             render(item, position)
         }
-        drawHealth()
+        drawHealth(firstPlayer)
+        drawHealth(secondPlayer, 1)
         drawInfo()
     }
 
@@ -285,7 +324,8 @@ class GameClient : KtxApplicationAdapter {
     private fun drawInfo(eventInfo: String? = null) {
         spriteBatch.begin()
         val font = BitmapFont()
-        val toDraw = eventInfo ?: "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
+        val toDraw =
+            eventInfo ?: "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
         textLayout.setText(
             font,
             toDraw
@@ -294,16 +334,18 @@ class GameClient : KtxApplicationAdapter {
         spriteBatch.end()
     }
 
-    private fun drawHealth() {
+    private fun drawHealth(player: GameCharacter?, bias: Int = 0) {
+        if (player == null) {
+            return
+        }
         spriteBatch.begin()
-        if (player == null) return
         renderer.use(ShapeRenderer.ShapeType.Filled) {
             renderer.color = Color.RED
-            val health = 28f * player!!.getHealth() / 10
-            val damaged = 28f * (100 - player!!.getHealth()) / 10
-            renderer.rect(20f, 680f, health, 20f)
+            val health = 28f * player.getHealth() / 10
+            val damaged = 28f * (100 - player.getHealth()) / 10
+            renderer.rect(bias * 300f + 20f, 680f, health, 20f)
             renderer.color = Color.DARK_GRAY
-            renderer.rect(20f + health, 680f, damaged, 20f)
+            renderer.rect(bias * 300f + 20f + health, 680f, damaged, 20f)
         }
         spriteBatch.end()
     }

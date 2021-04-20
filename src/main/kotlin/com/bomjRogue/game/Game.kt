@@ -3,7 +3,7 @@ package com.bomjRogue.game
 import com.bomjRogue.MusicUpdate
 import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
-import com.bomjRogue.character.Character
+import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.character.Npc
 import com.bomjRogue.character.Player
 import com.bomjRogue.character.manager.NpcManager
@@ -17,14 +17,12 @@ import com.bomjRogue.game.strategy.StrategyFactory
 import com.bomjRogue.world.*
 import com.bomjRogue.world.Map.PredefinedCoords.doorSpawn
 import com.bomjRogue.world.Map.PredefinedCoords.playerSpawn
-import com.bomjRogue.world.interactive.ExitDoor
-import com.bomjRogue.world.interactive.Health
-import com.bomjRogue.world.interactive.Item
-import com.bomjRogue.world.interactive.Sword
+import com.bomjRogue.world.interactive.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.lang.IllegalStateException
 import kotlin.random.Random
 
 class Game {
@@ -35,7 +33,6 @@ class Game {
         }
     }
 
-    private val players = mutableListOf<Player>()
     private val exitDoor = ExitDoor()
     private var npcCount = defaultNpcCount
     private val map = LevelGenerator.generateMap()
@@ -44,7 +41,7 @@ class Game {
     private val updatesMutex = Mutex()
     private val strategyFactory = StrategyFactory.init(map)
     private val npcManager = NpcManager()
-    private val playersManager = PlayersManager() // i know it might be not the best
+    private val playersManager = PlayersManager() // i know it might not be the best
 
     private fun addUpdate(update: Update) {
         runBlocking {
@@ -62,10 +59,9 @@ class Game {
         }
     }
 
-    fun join(playerName: String): Character {
+    fun join(playerName: String): GameCharacter {
         val player = Player(
-            playerName, npcManager.getDefaultStats()
-            , // todo : we can store it inside and fix bug with transportation
+            playerName, npcManager.getDefaultStats(), // todo : we can store it inside and fix bug with transportation
 //            HeroInventoryManager()
         )
         playersManager.addPlayer(player)
@@ -135,12 +131,19 @@ class Game {
 
     private fun initializeNpcs() {
         val newNpc = npcManager.getRandomNpcForCount(defaultNpcCount)
-        newNpc.forEach { map.addRandomPlace(it, Size(36f, 20f)) }
+        newNpc.forEach {
+            val size = when (it.type) {
+                ObjectType.Npc -> Size(36f, 20f)
+                ObjectType.CowardNpc -> Size(32f, 25f)
+                ObjectType.AggressiveNpc -> Size(25f, 25f)
+                else -> throw IllegalStateException()
+            }
+            map.addRandomPlace(it, size)
+        }
         npcManager.initWith(newNpc)
-//        npcManager.configureNpc(npcs.first()).setAllHunt() // just for test
     }
 
-    fun makeDamage(hitman: Character): Boolean {
+    fun makeDamage(hitman: GameCharacter): Boolean {
         var noDamage = true
         for (pl in npcManager.getNpcList() + playersManager.getPlayers()) { // todo: sync state
             if (pl != hitman && map.objectsConnect(hitman, pl)) {
@@ -151,10 +154,10 @@ class Game {
                 noDamage = false
                 var damage = hitman.getForce()
                 if (hitman is Player) {
-                  damage += playersManager.itemDamage(hitman)
+                    damage += playersManager.itemDamage(hitman)
                 }
                 pl.takeDamage(hitman.getForce())
-                if (pl.getHealth() <= 0 ) {
+                if (pl.getHealth() <= 0) {
                     map.remove(pl)
                     if (pl is Npc) {
                         npcManager.remove(pl)

@@ -1,8 +1,8 @@
 package com.bomjRogue.config
 
 import com.bomjRogue.game.strategy.AggressiveMovement
-import com.bomjRogue.game.strategy.PassiveMovement
-import com.bomjRogue.game.strategy.Strategy
+import com.bomjRogue.game.strategy.RandomMovement
+import com.bomjRogue.game.strategy.MovementStrategy
 import com.bomjRogue.world.interactive.Sword
 import kotlin.reflect.KClass
 
@@ -16,8 +16,8 @@ class Utils {
     }
 }
 
-enum class Strategies(val strategy: KClass<out Strategy>) {
-    DEFAULT(PassiveMovement::class),
+enum class Strategies(val strategy: KClass<out MovementStrategy>) {
+    DEFAULT(RandomMovement::class),
     HUNT(AggressiveMovement::class)
 }
 
