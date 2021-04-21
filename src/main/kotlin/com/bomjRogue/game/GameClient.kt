@@ -50,7 +50,7 @@ class GameClient : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private var textLayout = Pools.obtain(GlyphLayout::class.java)!!
-    private var firstPlayer: GameCharacter? = null
+    private lateinit var firstPlayer: GameCharacter
     private var secondPlayer: GameCharacter? = null
     private val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
 
@@ -79,7 +79,7 @@ class GameClient : KtxApplicationAdapter {
         runBlocking {
             try {
                 client.post<GameCharacter>("/disconnect") {
-                    parameter("player", firstPlayer!!.name)
+                    parameter("player", firstPlayer.name)
                     accept(ContentType.Any)
                 }
             } catch (e: NoTransformationFoundException) {
@@ -110,7 +110,7 @@ class GameClient : KtxApplicationAdapter {
                         }
                         UpdateType.PlayerUpdate -> {
                             val update: PlayerUpdate = gson.fromJson(text, object : TypeToken<PlayerUpdate>() {}.type)
-                            if (update.player.myName == firstPlayer!!.name) {
+                            if (update.player.myName == firstPlayer.name) {
                                 firstPlayer = update.player
                             }
                             if (secondPlayer != null && update.player.myName == secondPlayer!!.name) {
@@ -224,61 +224,59 @@ class GameClient : KtxApplicationAdapter {
     }
 
     private fun handleInput() {
-        if (firstPlayer != null && firstPlayer!!.isDead()) {
-            deathRequest(firstPlayer!!)
+        if (!this::firstPlayer.isInitialized) return
+        if (firstPlayer.isDead()) {
+            deathRequest(firstPlayer)
             return
         }
-        if (secondPlayer != null && firstPlayer!!.isDead()) {
+        if (secondPlayer != null && firstPlayer.isDead()) {
             deathRequest(secondPlayer!!)
             return
         }
+
+        val moved = movePlayer(firstPlayer, MovePattern(up=Input.Keys.W, down=Input.Keys.S, left=Input.Keys.A, right=Input.Keys.D, hit=Input.Keys.F))
+        val secondPattern = MovePattern(up=Input.Keys.UP, down=Input.Keys.DOWN, left=Input.Keys.LEFT, right=Input.Keys.RIGHT, hit=Input.Keys.ENTER)
+        if (secondPlayer != null) {
+            movePlayer(secondPlayer!!, secondPattern)
+        } else if (!moved){
+            movePlayer(firstPlayer, secondPattern)
+        }
+        when {
+            Gdx.input.isKeyPressed(Input.Keys.F2) -> {
+                volume = max(volume - 0.05f, 0f)
+            }
+            Gdx.input.isKeyPressed(Input.Keys.F3) -> {
+                volume = min(volume + 0.05f, 1f)
+            }
+            Gdx.input.isKeyJustPressed(Input.Keys.F10) -> {
+                joinSecondPlayer()
+            }
+        }
+        music.setVolume(0, volume)
+    }
+
+    data class MovePattern(val up: Int, val down: Int, val left: Int, val right: Int, val hit: Int)
+
+    private fun movePlayer(player: GameCharacter, move: MovePattern): Boolean {
         val step = 3f
-        var second = false
         val x = when {
-            Gdx.input.isKeyPressed(Input.Keys.A) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.LEFT) -> {
-                second = true
-                -step
-            }
-            Gdx.input.isKeyPressed(Input.Keys.D) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.RIGHT) -> {
-                second = true
-                +step
-            }
+            Gdx.input.isKeyPressed(move.left) -> -step
+            Gdx.input.isKeyPressed(move.right) -> +step
             else -> 0f
         }
         val y = when {
-            Gdx.input.isKeyPressed(Input.Keys.W) -> +step
-            Gdx.input.isKeyPressed(Input.Keys.UP) -> {
-                second = true
-                +step
-            }
-            Gdx.input.isKeyPressed(Input.Keys.S) -> -step
-            Gdx.input.isKeyPressed(Input.Keys.DOWN) -> {
-                second = true
-                -step
-            }
+            Gdx.input.isKeyPressed(move.up) -> +step
+            Gdx.input.isKeyPressed(move.down) -> -step
             else -> 0f
         }
-        if (x != 0f || y != 0f) {
-            if (second && secondPlayer != null) {
-                makeMove(secondPlayer!!, x, y)
-            } else {
-                makeMove(firstPlayer!!, x, y)
-            }
+        val moved = x != 0f || y != 0f
+        if (moved) {
+            makeMove(player, x, y)
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
-            hit(firstPlayer!!)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.ENTER)) {
-            if (secondPlayer != null) hit(secondPlayer!!) else (hit(firstPlayer!!))
-        } else if (Gdx.input.isKeyPressed(Input.Keys.F2)) {
-            volume = max(volume - 0.05f, 0f)
-        } else if (Gdx.input.isKeyPressed(Input.Keys.F3)) {
-            volume = min(volume + 0.05f, 1f)
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
-            joinSecondPlayer()
+        if (Gdx.input.isKeyJustPressed(move.hit)) {
+            hit(player)
         }
-        music.setVolume(0, volume)
+        return moved
     }
 
     private fun joinSecondPlayer() {
