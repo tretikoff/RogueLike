@@ -68,13 +68,13 @@ open class GameCharacter(val name: String, private val characteristics: Characte
         characteristics.reset()
     }
 
-    fun getCoordinateMoveDirection(): Pair<Float, Float> {
-        val x = when (direction) {
+    fun getCoordinateMoveDirection(directionParam: Direction = direction): Pair<Float, Float> {
+        val x = when (directionParam) {
             Direction.Left -> -1f
             Direction.Right -> +1f
             else -> 0f
         }
-        val y = when (direction) {
+        val y = when (directionParam) {
             Direction.Down -> +1f
             Direction.Up -> -1f
             else -> 0f

@@ -1,10 +1,10 @@
 package com.bomjRogue.game.strategy
 
+import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.character.Player
 import com.bomjRogue.config.SettingsManager
 import com.bomjRogue.game.Direction
 import com.bomjRogue.world.Map
-import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.world.Position
 import com.bomjRogue.world.interactive.GameObject
 import kotlin.collections.Map.Entry
@@ -33,7 +33,12 @@ abstract class AbstractMovement(map: Map): RandomMovement(map = map) {
             return
         }
 
-        character.direction = getDirection(character, resolvedPlayer)
+        val newDirection = getDirection(character, resolvedPlayer)
+        if (map.isIntersectWithWalls(character, newDirection)) {
+            super.makeMove(character)
+            return
+        }
+        character.direction = newDirection
         val (x, y) = character.getCoordinateMoveDirection()
         map.move(character, x, y)
     }
