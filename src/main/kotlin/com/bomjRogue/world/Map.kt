@@ -6,7 +6,6 @@ import com.bomjRogue.world.interactive.GameObject
 import com.bomjRogue.world.interactive.ObjectType
 import javafx.scene.shape.Line
 import kotlinx.serialization.Serializable
-import java.awt.Rectangle
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -25,6 +24,9 @@ data class Size(val height: Float, val width: Float)
 @Serializable
 data class Position(val coordinates: Coordinates, val size: Size)
 
+
+@Serializable
+data class RectangleObj(val x : Float, val y : Float, val width: Float, val height : Float)
 
 class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val mapWidth: Float) {
 
@@ -82,7 +84,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
         return Position(Coordinates(newX, newY), lhs.size)
     }
 
-    private fun getRelativeDirection(rectangle: Rectangle, x: Double, y:Double): Int {
+    private fun getRelativeDirection(rectangle: RectangleObj, x: Double, y:Double): Int {
         var out = 0
         when {
             rectangle.width <= 0 -> {
@@ -109,7 +111,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
         return out
     }
 
-    private fun lineRectangleIntersect(line: Line, rectangle: Rectangle): Boolean {
+    private fun lineRectangleIntersect(line: Line, rectangle: RectangleObj): Boolean {
         var relativeFromStart: Int
         var relativeFromEnd: Int
         if (getRelativeDirection(rectangle, line.endX, line.endY).also { relativeFromEnd = it } == 0) {
@@ -120,20 +122,20 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
                 return false
             }
             if (relativeFromStart and (liesLeft or liesRight) != 0) {
-                var xNew = rectangle.x.toDouble()
+                var xNew = rectangle.x
                 if (relativeFromStart and liesRight != 0) {
                     xNew += rectangle.width
                 }
                 line.startY = line.startY + (xNew - line.startX) * (line.endY - line.startY) / (line.endX - line.startX)
-                line.startX = xNew
+                line.startX = xNew.toDouble()
 
             } else {
-                var yNew = rectangle.y.toDouble()
+                var yNew = rectangle.y
                 if (relativeFromStart and liesLower != 0) {
                     yNew += rectangle.height
                 }
                 line.startX = line.startX + (yNew - line.startY) * (line.endX - line.startX) / (line.endY - line.startY)
-                line.startY = yNew
+                line.startY = yNew.toDouble()
             }
         }
         return true
@@ -142,8 +144,8 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
     private fun lineIntersectsWithAnyWall(line: Line, wallsParam: MutableMap<Wall, Position> = walls): Boolean {
         for (entry in wallsParam) {
             val wallPos = entry.value
-            val rect = Rectangle(wallPos.coordinates.xCoordinate.toInt(), wallPos.coordinates.yCoordinate.toInt(),
-                wallPos.size.width.toInt(), wallPos.size.height.toInt() )
+            val rect = RectangleObj(wallPos.coordinates.xCoordinate, wallPos.coordinates.yCoordinate,
+                wallPos.size.width, wallPos.size.height )
             if (lineRectangleIntersect(line, rect)) {
                 return true
             }
