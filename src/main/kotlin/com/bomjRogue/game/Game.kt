@@ -10,6 +10,9 @@ import com.bomjRogue.character.manager.NpcManager
 import com.bomjRogue.character.manager.PlayersManager
 import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
 import com.bomjRogue.config.SettingsManager.Companion.defaultSword
+import com.bomjRogue.config.SettingsManager.Companion.dropChance
+import com.bomjRogue.config.SettingsManager.Companion.healthSize
+import com.bomjRogue.config.SettingsManager.Companion.swordSize
 import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
 import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
 import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
@@ -22,7 +25,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.lang.IllegalStateException
 import kotlin.random.Random
 
 class Game {
@@ -115,14 +117,34 @@ class Game {
         map.add(exitDoor, doorSpawn)
     }
 
+    private fun dropRandomItem(coords: Coordinates?) {
+        val type = arrayOf(ObjectType.Sword, ObjectType.Health).random()
+        val size: Size
+        val item: Item
+
+        if (type == ObjectType.Sword) {
+            item = LevelGenerator.generateSwordItem()
+            size = swordSize
+        } else {
+            item = LevelGenerator.generateHealthItem()
+            size = healthSize
+        }
+
+        if (coords != null) {
+            map.add(item, Position(coords, size))
+        } else {
+            map.addRandomPlace(item, size)
+        }
+    }
+
     private fun initializeItems() {
         items.clear()
         val weapon = Sword(10)
         val health = Health(50)
         items.add(weapon)
         items.add(health)
-        map.addRandomPlace(weapon, Size(40f, 40f))
-        map.addRandomPlace(health, Size(25f, 25f))
+        map.addRandomPlace(weapon, swordSize)
+        map.addRandomPlace(health, healthSize)
     }
 
     fun getGameItems(): GameItems {
@@ -160,7 +182,11 @@ class Game {
                 if (pl.getHealth() <= 0) {
                     map.remove(pl)
                     if (pl is Npc) {
+                        val pos = map.location[pl]
                         npcManager.remove(pl)
+                        if (Random.nextInt(100) < dropChance) {
+                            dropRandomItem(pos!!.coordinates)
+                        }
                         continue
                     }
                     if (pl is Player) {
