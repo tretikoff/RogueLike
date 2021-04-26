@@ -4,7 +4,6 @@ import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.game.Direction
 import com.bomjRogue.world.interactive.GameObject
 import com.bomjRogue.world.interactive.ObjectType
-import javafx.scene.shape.Line
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -27,6 +26,9 @@ data class Position(val coordinates: Coordinates, val size: Size)
 
 @Serializable
 data class RectangleObj(val x : Float, val y : Float, val width: Float, val height : Float)
+
+@Serializable
+data class Line(var startX: Float, var startY: Float, var endX: Float, var endY: Float)
 
 class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val mapWidth: Float) {
 
@@ -84,7 +86,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
         return Position(Coordinates(newX, newY), lhs.size)
     }
 
-    private fun getRelativeDirection(rectangle: RectangleObj, x: Double, y:Double): Int {
+    private fun getRelativeDirection(rectangle: RectangleObj, x: Float, y:Float): Int {
         var out = 0
         when {
             rectangle.width <= 0 -> {
@@ -127,7 +129,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
                     xNew += rectangle.width
                 }
                 line.startY = line.startY + (xNew - line.startX) * (line.endY - line.startY) / (line.endX - line.startX)
-                line.startX = xNew.toDouble()
+                line.startX = xNew
 
             } else {
                 var yNew = rectangle.y
@@ -135,7 +137,7 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
                     yNew += rectangle.height
                 }
                 line.startX = line.startX + (yNew - line.startY) * (line.endX - line.startX) / (line.endY - line.startY)
-                line.startY = yNew.toDouble()
+                line.startY = yNew
             }
         }
         return true
@@ -160,8 +162,8 @@ class Map(private val walls: MutableMap<Wall, Position>, mapHeight: Float, val m
                         objCoord.yCoordinate + shift_y)
         val newPosition = Position(newCoordinates, objSize)
 
-        val resultLine = Line(objCoord.xCoordinate.toDouble(),objCoord.yCoordinate.toDouble(),
-            newCoordinates.xCoordinate.toDouble(), newCoordinates.yCoordinate.toDouble()
+        val resultLine = Line(objCoord.xCoordinate ,objCoord.yCoordinate,
+            newCoordinates.xCoordinate, newCoordinates.yCoordinate
         )
 
         val middlePos = getMiddlePos(Position(objCoord, objSize), newPosition)
