@@ -21,8 +21,7 @@ enum class Strategies(val strategy: KClass<out MovementStrategy>) {
     HUNT(AggressiveMovement::class)
 }
 
-class SettingsManager {
-    companion object {
+object SettingsManager {
         const val defaultNpcCount = 5
         val defaultStrategy = Strategies.DEFAULT
         const val defaultDetectRadius = 55.0
