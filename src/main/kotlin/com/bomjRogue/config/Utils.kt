@@ -7,8 +7,7 @@ import com.bomjRogue.world.Size
 import com.bomjRogue.world.interactive.Sword
 import kotlin.reflect.KClass
 
-class Utils {
-    companion object {
+object Utils {
         const val fleshHitSoundName = "hit_body.mp3"
         const val swordHitSoundName = "hit.mp3"
         const val itemPickUpSoundName = "sword_get.mp3"
