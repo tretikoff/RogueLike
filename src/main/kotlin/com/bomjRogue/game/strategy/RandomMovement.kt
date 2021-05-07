@@ -6,8 +6,8 @@ import com.bomjRogue.world.Map
 import com.bomjRogue.character.GameCharacter
 import kotlin.random.Random
 
-open class RandomMovement(map: Map) : MovementStrategy(map = map) {
-    override fun makeMove(character: GameCharacter) {
+open class RandomMovement() : MovementStrategy() {
+    override fun makeMove(character: GameCharacter, map: Map) {
         if (character is Npc) {
             val randValue = Random.nextInt(100)
             if (randValue < randomThreshold) {

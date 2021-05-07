@@ -7,53 +7,33 @@ import com.bomjRogue.character.RandomNpc
 import com.bomjRogue.world.Map
 import kotlin.reflect.KClass
 
-enum class StrategyType {
-    Passive,
-    Aggressive,
-    Coward,
-}
-
-class StrategyFactory private constructor(private var map: Map? = null) {
+class StrategyFactory private constructor() {
     companion object {
-        var INSTANCE: StrategyFactory = StrategyFactory()
-
-        fun init(map: Map): StrategyFactory {
-            if (INSTANCE.map == null || INSTANCE.map != map) {
-                INSTANCE.updateMap(map)
+        fun getStrategy(type: KClass<*>): MovementStrategy {
+            return when (type) {
+                AggressiveNpc::class -> getAggressiveStrategy()
+                CowardNpc::class -> getCowardlyStrategy()
+                RandomNpc::class -> getRandomMoveStrategy()
+                else -> throw IllegalArgumentException()
             }
-            return INSTANCE
         }
-    }
 
-    fun updateMap(map: Map) {
-        INSTANCE.map = map
-    }
-
-    fun getRandomMoveStrategy(): MovementStrategy {
-        return RandomMovement(INSTANCE.map!!)
-    }
-
-    fun getStrategy(type: KClass<*>): MovementStrategy {
-        return when (type) {
-            AggressiveNpc::class -> getAggressiveStrategy()
-            CowardNpc::class -> getCowardlyStrategy()
-            RandomNpc::class -> getRandomMoveStrategy()
-            else -> throw IllegalArgumentException()
+        private fun getRandomMoveStrategy(): MovementStrategy {
+            return RandomMovement()
         }
-    }
 
-    fun getAggressiveStrategy(): MovementStrategy {
-        return AggressiveMovement(INSTANCE.map!!)
-    }
+        private fun getAggressiveStrategy(): MovementStrategy {
+            return AggressiveMovement()
+        }
 
-    fun getCowardlyStrategy(): MovementStrategy {
-        return CowardlyMovement(INSTANCE.map!!)
+        private fun getCowardlyStrategy(): MovementStrategy {
+            return CowardlyMovement()
+        }
     }
 }
 
-//@Serializable
-abstract class MovementStrategy internal constructor(protected var map: Map) {
+abstract class MovementStrategy internal constructor() {
     var randomThreshold = 5
 
-    abstract fun makeMove(character: GameCharacter)
+    abstract fun makeMove(character: GameCharacter, map: Map)
 }

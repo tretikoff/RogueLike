@@ -7,8 +7,12 @@ import com.bomjRogue.world.Position
 import com.bomjRogue.world.interactive.GameObject
 import kotlin.collections.Map.Entry
 
-class AggressiveMovement(map: Map) : AbstractMovement(map = map) {
-    override fun getDirection(character: GameCharacter, resolvedPlayer: Entry<GameObject, Position>): Direction {
+class AggressiveMovement : AbstractMovement() {
+    override fun getDirection(
+        character: GameCharacter,
+        resolvedPlayer: Entry<GameObject, Position>,
+        map: Map
+    ): Direction {
         val (toXCoord, toYCoord) = resolvedPlayer.value.coordinates
         val (fromXCoord, fromYCoord) = map.location[character]!!.coordinates
         return map.getDirection(toXCoord - fromXCoord, toYCoord - fromYCoord)

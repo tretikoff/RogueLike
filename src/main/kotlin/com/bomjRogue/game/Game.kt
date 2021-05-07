@@ -39,7 +39,6 @@ class Game {
     private var items = mutableListOf<Item>()
     private var updates = mutableListOf<Update>()
     private val updatesMutex = Mutex()
-    private val strategyFactory = StrategyFactory.init(map)
     private val npcManager = NpcManager()
     private val playersManager = PlayersManager() // i know it might not be the best
 
@@ -102,7 +101,6 @@ class Game {
 
     fun initialize(reset: Boolean = true) {
         map.reset()
-        strategyFactory.updateMap(map)
         initializeNpcs()
         initializeItems()
         val players = playersManager.getPlayers()
@@ -214,7 +212,7 @@ class Game {
                     }
                 }
             }
-            npcManager.makeMoveNpc(npc)
+            npcManager.makeMoveNpc(npc, map)
         }
     }
 

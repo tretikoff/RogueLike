@@ -7,6 +7,7 @@ import com.bomjRogue.config.SettingsManager.defaultHealth
 import com.bomjRogue.config.SettingsManager.defaultNpcCount
 import com.bomjRogue.game.strategy.MovementStrategy
 import com.bomjRogue.game.strategy.StrategyFactory
+import com.bomjRogue.world.Map
 import kotlin.random.Random
 
 enum class Modifier {
@@ -67,28 +68,6 @@ class NpcManager {
     }
 
 
-    inner class NpcConfigurer {
-        private lateinit var currentNpc: Npc
-
-        fun switchTo(npc: Npc) {
-            currentNpc = npc
-        }
-
-        fun setRandom() = strategies.put(currentNpc, StrategyFactory.INSTANCE.getRandomMoveStrategy())
-
-        fun setAllRandom() {
-            strategies.replaceAll { _, _ -> StrategyFactory.INSTANCE.getRandomMoveStrategy() }
-        }
-
-        fun setHunt() = strategies.put(currentNpc, StrategyFactory.INSTANCE.getAggressiveStrategy())
-
-        fun setAllHunt() {
-            strategies.replaceAll { _, _ -> StrategyFactory.INSTANCE.getAggressiveStrategy() }
-        }
-
-        fun getCurrent() = getCurrentStrategy(currentNpc)
-    }
-
     private var strategies = mutableMapOf<Npc, MovementStrategy>()
     private var npcs = mutableListOf<Npc>()
     private val npcCreator = NpcCreator()
@@ -99,10 +78,9 @@ class NpcManager {
     }
 
     private fun initStrategies(params: List<Class<out MovementStrategy>> = emptyList()) {
-        val factory = StrategyFactory.INSTANCE
         if (params.isEmpty()) {
             npcs.forEach {
-                strategies[it] = factory.getStrategy(it::class)
+                strategies[it] = StrategyFactory.getStrategy(it::class)
             }
         }
     }
@@ -121,8 +99,8 @@ class NpcManager {
         return ans
     }
 
-    fun makeMoveNpc(npc: Npc) {
-        strategies[npc]!!.makeMove(npc)
+    fun makeMoveNpc(npc: Npc, map: Map) {
+        strategies[npc]!!.makeMove(npc, map)
     }
 
     fun getCurrentStrategy(npc: Npc): MovementStrategy? {
