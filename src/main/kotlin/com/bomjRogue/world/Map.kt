@@ -3,7 +3,6 @@ package com.bomjRogue.world
 import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.game.Direction
 import com.bomjRogue.world.interactive.GameObject
-import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -11,7 +10,7 @@ import kotlin.random.Random
 
 typealias GameItems = MutableMap<GameObject, Position>
 
-class Wall : GameObject(ObjectType.Wall)
+class Wall : GameObject()
 
 @Serializable
 data class Coordinates(val xCoordinate: Float, val yCoordinate: Float)

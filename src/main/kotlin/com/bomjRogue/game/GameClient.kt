@@ -2,10 +2,7 @@ package com.bomjRogue.game
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
-import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -13,16 +10,14 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.utils.Pools
 import com.bomjRogue.*
 import com.bomjRogue.character.GameCharacter
-import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
-import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
-import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
-import com.bomjRogue.config.Utils.Companion.swordHitSoundName
+import com.bomjRogue.config.ConfigManager
+import com.bomjRogue.config.ConnectionManager
+import com.bomjRogue.config.Utils.swordHitSoundName
 import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
 import com.bomjRogue.game.command.MoveCommand
 import com.bomjRogue.world.Position
-import com.bomjRogue.world.interactive.GameObject
-import com.bomjRogue.world.interactive.ObjectType
+import com.bomjRogue.world.Wall
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import io.ktor.client.*
@@ -39,12 +34,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import ktx.app.KtxApplicationAdapter
 import ktx.app.clearScreen
-import ktx.assets.getAsset
-import ktx.assets.load
 import ktx.graphics.use
 import java.util.*
-import kotlin.math.max
-import kotlin.math.min
 
 class GameClient : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
@@ -54,24 +45,16 @@ class GameClient : KtxApplicationAdapter {
     private var secondPlayer: GameCharacter? = null
     private val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
 
-    private val manager = AssetManager()
-    private var gameItems = mutableMapOf<GameObject, Position>()
-    private val sprites = mutableMapOf<ObjectType, Texture>()
+    private val assetsManager = AssetsManager()
+    private val musicManager = MusicManger()
+    private var gameItems = mutableMapOf<String, Position>()
 
-
-    private lateinit var music: Sound
-    private var volume = 0.05f
-    private lateinit var hitBodySound: Sound
-    private lateinit var swordGetSound: Sound
-    private lateinit var hitSound: Sound
-    private lateinit var healthSound: Sound
-    private lateinit var knownSounds: Map<String, Sound>
     private val client = HttpClient(CIO) {
         install(JsonFeature)
         install(WebSockets)
         defaultRequest {
-            host = "localhost"
-            port = 8084
+            host = ConnectionManager.host
+            port = ConnectionManager.port
         }
     }
 
@@ -119,7 +102,7 @@ class GameClient : KtxApplicationAdapter {
                         }
                         UpdateType.MusicPlay -> {
                             val update: MusicUpdate = gson.fromJson(text, object : TypeToken<MusicUpdate>() {}.type)
-                            knownSounds[update.soundName]?.play()
+                            musicManager.play(update.soundName)
                         }
                     }
                 }
@@ -133,43 +116,13 @@ class GameClient : KtxApplicationAdapter {
     }
 
     override fun create() {
-        loadAssets()
-        initialize()
-    }
-
-    private inline fun <reified T : Any> load(path: String): T {
-        manager.load<T>(path).finishLoading()
-        return manager.getAsset(path)
-    }
-
-    private fun loadAssets() {
-        sprites[ObjectType.Player] = load("player.png")
-        sprites[ObjectType.ExitDoor] = load("door.png")
-        sprites[ObjectType.Npc] = load("SteamMan.png")
-        sprites[ObjectType.AggressiveNpc] = load("aggressive.png")
-        sprites[ObjectType.CowardNpc] = load("woodcutter.png")
-        sprites[ObjectType.Sword] = load("sword.png")
-        sprites[ObjectType.Health] = load("health.png")
-// Replace if your PC is strong enough
-//        load<Sound>("sound.mp3").loop()
-        music = load("sound_light.mp3")
-        hitBodySound = load(fleshHitSoundName)
-        swordGetSound = load(itemPickUpSoundName)
-        hitSound = load(swordHitSoundName)
-        healthSound = load(healthPickUpSoundName)
-        knownSounds = mapOf(
-            fleshHitSoundName to hitBodySound,
-            itemPickUpSoundName to swordGetSound, swordHitSoundName to hitSound, healthPickUpSoundName to healthSound
-        )
-        music.loop(volume)
-    }
-
-    private fun initialize() {
         renderer = ShapeRenderer()
         spriteBatch = SpriteBatch()
         runBlocking {
             firstPlayer = join()
         }
+        assetsManager.loadAssets()
+        musicManager.loadMusic()
         GlobalScope.async {
             receive()
         }
@@ -183,7 +136,7 @@ class GameClient : KtxApplicationAdapter {
     private fun hit(player: GameCharacter) {
         runBlocking {
             val request = HitCommand(player.name)
-            hitSound.play() // anyway
+            musicManager.play(swordHitSoundName)
             try {
                 client.post<MoveCommand>("/hit") {
                     body = request
@@ -243,16 +196,15 @@ class GameClient : KtxApplicationAdapter {
         }
         when {
             Gdx.input.isKeyPressed(Input.Keys.F2) -> {
-                volume = max(volume - 0.05f, 0f)
+                musicManager.increaseVolume()
             }
             Gdx.input.isKeyPressed(Input.Keys.F3) -> {
-                volume = min(volume + 0.05f, 1f)
+                musicManager.decreaseVolume()
             }
             Gdx.input.isKeyJustPressed(Input.Keys.F10) -> {
                 joinSecondPlayer()
             }
         }
-        music.setVolume(0, volume)
     }
 
     data class MovePattern(val up: Int, val down: Int, val left: Int, val right: Int, val hit: Int)
@@ -291,7 +243,7 @@ class GameClient : KtxApplicationAdapter {
         clearScreen(0f, 0f, 0f, 0f)
         renderer.use(ShapeRenderer.ShapeType.Filled) {
             renderer.color = Color.GRAY
-            renderer.rect(0f, 0f, 1280f, 720f)
+            renderer.rect(0f, 0f, ConfigManager.width, ConfigManager.height)
         }
 
         for (obj in gameItems) {
@@ -304,17 +256,18 @@ class GameClient : KtxApplicationAdapter {
         drawInfo()
     }
 
-    private fun render(obj: GameObject, pos: Position) {
+    private fun render(obj: String, pos: Position) {
         val (x, y) = pos.coordinates
         val (h, w) = pos.size
-        if (obj.type == ObjectType.Wall) {
+        val name = obj.split("_")[0]
+        if (name == Wall::class.qualifiedName) {
             renderer.use(ShapeRenderer.ShapeType.Filled) {
                 renderer.color = Color.BLACK
                 renderer.rect(x, y, w, h)
             }
         } else {
             spriteBatch.begin()
-            spriteBatch.draw(sprites[obj.type], x, y, w, h)
+            spriteBatch.draw(assetsManager.getSprite(name), x, y, w, h)
             spriteBatch.end()
         }
     }
@@ -323,7 +276,7 @@ class GameClient : KtxApplicationAdapter {
         spriteBatch.begin()
         val font = BitmapFont()
         val toDraw =
-            eventInfo ?: "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume"
+            eventInfo ?: "ASDW or arrow keys to move, ENTER or F to hit\nF2 to decrease and F3 to increase music volume\nF10 to add second player"
         textLayout.setText(
             font,
             toDraw

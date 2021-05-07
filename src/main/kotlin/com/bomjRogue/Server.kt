@@ -2,11 +2,12 @@
 package com.bomjRogue
 
 import com.bomjRogue.character.Player
+import com.bomjRogue.config.ConnectionManager
 import com.bomjRogue.game.Game
 import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
 import com.bomjRogue.game.command.MoveCommand
-import com.bomjRogue.world.GameItems
+import com.bomjRogue.world.Position
 import com.google.gson.GsonBuilder
 import io.ktor.application.*
 import io.ktor.features.*
@@ -34,13 +35,13 @@ enum class UpdateType {
 @Serializable
 open class Update(val type: UpdateType)
 
-data class MapUpdate(val items: GameItems) : Update(UpdateType.ItemsUpdate)
+data class MapUpdate(val items: MutableMap<String, Position>) : Update(UpdateType.ItemsUpdate)
 data class PlayerUpdate(val player: Player) : Update(UpdateType.PlayerUpdate)
 data class MusicUpdate(val soundName: String) : Update(UpdateType.MusicPlay)
 
 fun main() {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
-    embeddedServer(Netty, host = "127.0.0.1", port = 8084) {
+    embeddedServer(Netty, host = ConnectionManager.host, port = ConnectionManager.port) {
         val game = Game()
 
         install(WebSockets)

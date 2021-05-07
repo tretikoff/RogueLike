@@ -5,6 +5,11 @@ plugins {
     id("application")
     id("org.jetbrains.kotlin.jvm") version "1.4.30"
     kotlin("plugin.serialization") version "1.4.30"
+    id("org.openjfx.javafxplugin") version "0.0.8"
+}
+
+javafx {
+    modules("javafx.controls", "javafx.fxml")
 }
 
 group = "me.professional"

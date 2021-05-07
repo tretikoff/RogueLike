@@ -3,19 +3,17 @@ package com.bomjRogue.game
 import com.bomjRogue.MusicUpdate
 import com.bomjRogue.PlayerUpdate
 import com.bomjRogue.Update
-import com.bomjRogue.character.GameCharacter
-import com.bomjRogue.character.Npc
-import com.bomjRogue.character.Player
+import com.bomjRogue.character.*
 import com.bomjRogue.character.manager.NpcManager
 import com.bomjRogue.character.manager.PlayersManager
-import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
-import com.bomjRogue.config.SettingsManager.Companion.defaultSword
-import com.bomjRogue.config.SettingsManager.Companion.dropChance
-import com.bomjRogue.config.SettingsManager.Companion.healthSize
-import com.bomjRogue.config.SettingsManager.Companion.swordSize
-import com.bomjRogue.config.Utils.Companion.fleshHitSoundName
-import com.bomjRogue.config.Utils.Companion.healthPickUpSoundName
-import com.bomjRogue.config.Utils.Companion.itemPickUpSoundName
+import com.bomjRogue.config.SettingsManager.defaultNpcCount
+import com.bomjRogue.config.SettingsManager.defaultSword
+import com.bomjRogue.config.SettingsManager.dropChance
+import com.bomjRogue.config.SettingsManager.healthSize
+import com.bomjRogue.config.SettingsManager.swordSize
+import com.bomjRogue.config.Utils.fleshHitSoundName
+import com.bomjRogue.config.Utils.healthPickUpSoundName
+import com.bomjRogue.config.Utils.itemPickUpSoundName
 import com.bomjRogue.game.strategy.StrategyFactory
 import com.bomjRogue.world.*
 import com.bomjRogue.world.Map.PredefinedCoords.doorSpawn
@@ -118,11 +116,11 @@ class Game {
     }
 
     private fun dropRandomItem(coords: Coordinates?) {
-        val type = arrayOf(ObjectType.Sword, ObjectType.Health).random()
+        val type = arrayOf(Sword::class, Health::class).random()
         val size: Size
         val item: Item
 
-        if (type == ObjectType.Sword) {
+        if (type == Sword::class) {
             item = LevelGenerator.generateSwordItem()
             size = swordSize
         } else {
@@ -147,17 +145,17 @@ class Game {
         map.addRandomPlace(health, healthSize)
     }
 
-    fun getGameItems(): GameItems {
-        return HashMap(map.location)
+    fun getGameItems(): MutableMap<String, Position> {
+        return map.location.mapKeys {"${it.key::class.qualifiedName!!}_${it.key.hashCode()}" }.toMutableMap()
     }
 
     private fun initializeNpcs() {
         val newNpc = npcManager.getRandomNpcForCount(defaultNpcCount)
         newNpc.forEach {
-            val size = when (it.type) {
-                ObjectType.Npc -> Size(36f, 20f)
-                ObjectType.CowardNpc -> Size(32f, 25f)
-                ObjectType.AggressiveNpc -> Size(25f, 25f)
+            val size = when (it) {
+                is RandomNpc -> Size(36f, 20f)
+                is CowardNpc -> Size(32f, 25f)
+                is AggressiveNpc -> Size(25f, 25f)
                 else -> throw IllegalStateException()
             }
             map.addRandomPlace(it, size)

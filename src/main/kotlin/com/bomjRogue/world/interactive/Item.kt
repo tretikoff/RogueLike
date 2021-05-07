@@ -1,10 +1,9 @@
 package com.bomjRogue.world.interactive
 
-abstract class Item(type: ObjectType): GameObject(type)
+abstract class Item: GameObject()
 
+class Sword(val damage: Int) : Item()
 
-class Sword(val damage: Int) : Item(ObjectType.Sword)
+class ExitDoor: Item()
 
-class ExitDoor: Item(ObjectType.ExitDoor)
-
-class Health(val healthPoints: Int) : Item(ObjectType.Health)
+class Health(val healthPoints: Int) : Item()

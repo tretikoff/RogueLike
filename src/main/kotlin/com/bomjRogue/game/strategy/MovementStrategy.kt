@@ -1,7 +1,11 @@
 package com.bomjRogue.game.strategy
 
+import com.bomjRogue.character.AggressiveNpc
+import com.bomjRogue.character.CowardNpc
 import com.bomjRogue.character.GameCharacter
+import com.bomjRogue.character.RandomNpc
 import com.bomjRogue.world.Map
+import kotlin.reflect.KClass
 
 enum class StrategyType {
     Passive,
@@ -25,23 +29,24 @@ class StrategyFactory private constructor(private var map: Map? = null) {
         INSTANCE.map = map
     }
 
-    fun getRandomMoveStrategy(): RandomMovement {
+    fun getRandomMoveStrategy(): MovementStrategy {
         return RandomMovement(INSTANCE.map!!)
     }
 
-    fun getStrategy(type: StrategyType): RandomMovement {
+    fun getStrategy(type: KClass<*>): MovementStrategy {
         return when (type) {
-            StrategyType.Aggressive -> getAggressiveStrategy()
-            StrategyType.Coward -> getCowardlyStrategy()
-            StrategyType.Passive -> getRandomMoveStrategy()
+            AggressiveNpc::class -> getAggressiveStrategy()
+            CowardNpc::class -> getCowardlyStrategy()
+            RandomNpc::class -> getRandomMoveStrategy()
+            else -> throw IllegalArgumentException()
         }
     }
 
-    fun getAggressiveStrategy(): AggressiveMovement {
+    fun getAggressiveStrategy(): MovementStrategy {
         return AggressiveMovement(INSTANCE.map!!)
     }
 
-    fun getCowardlyStrategy(): CowardlyMovement {
+    fun getCowardlyStrategy(): MovementStrategy {
         return CowardlyMovement(INSTANCE.map!!)
     }
 }

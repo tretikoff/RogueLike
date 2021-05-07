@@ -1,12 +1,7 @@
 package com.bomjRogue.character
 
-import com.bomjRogue.game.strategy.StrategyType
-import com.bomjRogue.world.interactive.ObjectType
+abstract class Npc(name: String, characteristics: Characteristics) : GameCharacter(name, characteristics)
 
-class Npc(val strategyType: StrategyType, name: String, characteristics: Characteristics) : GameCharacter(
-    name, characteristics, when (strategyType) {
-        StrategyType.Passive -> ObjectType.Npc
-        StrategyType.Aggressive -> ObjectType.AggressiveNpc
-        StrategyType.Coward -> ObjectType.CowardNpc
-    }
-)
+class RandomNpc(name: String, characteristics: Characteristics) : Npc(name, characteristics)
+class CowardNpc(name: String, characteristics: Characteristics) : Npc(name, characteristics)
+class AggressiveNpc(name: String, characteristics: Characteristics) : Npc(name, characteristics)

@@ -2,20 +2,14 @@ package com.bomjRogue.game.command
 
 import kotlinx.serialization.Serializable
 
-enum class CommandType {
-    Move,
-    Hit,
-    Respawn
-}
+@Serializable
+open class Command
 
 @Serializable
-open class Command(val type: CommandType)
+class MoveCommand(val playerName: String, val x: Float, val y: Float) : Command()
 
 @Serializable
-class MoveCommand(val playerName: String, val x: Float, val y: Float) : Command(CommandType.Move)
+class HitCommand(val playerName: String): Command()
 
 @Serializable
-class HitCommand(val playerName: String): Command(CommandType.Hit)
-
-@Serializable
-class DeathCommand(val playerName: String): Command(CommandType.Respawn)
+class DeathCommand(val playerName: String): Command()

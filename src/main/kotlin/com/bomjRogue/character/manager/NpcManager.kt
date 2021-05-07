@@ -1,13 +1,12 @@
 package com.bomjRogue.character.manager
 
 import com.bomjRogue.character.*
-import com.bomjRogue.config.SettingsManager.Companion.defaultArmor
-import com.bomjRogue.config.SettingsManager.Companion.defaultForce
-import com.bomjRogue.config.SettingsManager.Companion.defaultHealth
-import com.bomjRogue.config.SettingsManager.Companion.defaultNpcCount
+import com.bomjRogue.config.SettingsManager.defaultArmor
+import com.bomjRogue.config.SettingsManager.defaultForce
+import com.bomjRogue.config.SettingsManager.defaultHealth
+import com.bomjRogue.config.SettingsManager.defaultNpcCount
 import com.bomjRogue.game.strategy.MovementStrategy
 import com.bomjRogue.game.strategy.StrategyFactory
-import com.bomjRogue.game.strategy.StrategyType
 import kotlin.random.Random
 
 enum class Modifier {
@@ -21,14 +20,9 @@ class NpcManager {
     // perhaps might be separate class
     private inner class NpcCreator {
         private fun getRandName() = "NPC_${Random.nextInt() + Random.nextInt(1, 9)}"
-        private fun getRandType(): StrategyType = when (Random.nextInt(3)) {
-            0 -> StrategyType.Aggressive
-            1 -> StrategyType.Coward
-            else -> StrategyType.Passive
-        }
 
         fun getRandomNpc(): Npc {
-            val stats: CharacteristicsMap = when (Modifier.values().toList().shuffled().first()) {
+            val stats = when (Modifier.values().toList().shuffled().first()) {
                 Modifier.REGULAR -> {
                     getRegularStats()
                 }
@@ -40,7 +34,11 @@ class NpcManager {
                 }
             }
 
-            return Npc(getRandType(), getRandName(), Characteristics(stats))
+            return when (Random.nextInt(3)) {
+                0 -> AggressiveNpc(getRandName(), Characteristics(stats))
+                1 -> CowardNpc(getRandName(), Characteristics(stats))
+                else -> RandomNpc(getRandName(), Characteristics(stats))
+            }
         }
 
         fun getRegularStats(): MutableMap<CharacteristicType, Int> {
@@ -92,9 +90,7 @@ class NpcManager {
     }
 
     private var strategies = mutableMapOf<Npc, MovementStrategy>()
-    private val defaultStrategy = StrategyFactory.INSTANCE.getStrategy(StrategyType.Passive)
     private var npcs = mutableListOf<Npc>()
-    private val npcConfigurator = NpcConfigurer()
     private val npcCreator = NpcCreator()
 
     fun initWith(npcList: MutableList<Npc>) {
@@ -106,7 +102,7 @@ class NpcManager {
         val factory = StrategyFactory.INSTANCE
         if (params.isEmpty()) {
             npcs.forEach {
-                strategies[it] = factory.getStrategy(it.strategyType)
+                strategies[it] = factory.getStrategy(it::class)
             }
         }
     }
@@ -127,14 +123,6 @@ class NpcManager {
 
     fun makeMoveNpc(npc: Npc) {
         strategies[npc]!!.makeMove(npc)
-    }
-
-    fun configureNpc(npc: Npc): NpcConfigurer {
-        if (!strategies.containsKey(npc)) {
-            strategies[npc] = defaultStrategy
-        }
-        npcConfigurator.switchTo(npc)
-        return npcConfigurator
     }
 
     fun getCurrentStrategy(npc: Npc): MovementStrategy? {

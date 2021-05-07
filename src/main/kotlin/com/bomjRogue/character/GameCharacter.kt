@@ -2,40 +2,15 @@ package com.bomjRogue.character
 
 import com.bomjRogue.game.Direction
 import com.bomjRogue.world.interactive.GameObject
-import com.bomjRogue.world.interactive.ObjectType
 import kotlinx.serialization.Serializable
 import kotlin.math.max
 import kotlin.math.min
 
-/**
- * This was unfortunate: for some I reason there were troubles with passing this data to client and back during pickup/hit events
- */
-//@Serializable
-//class Player(val myName: String, val myCharacteristics: Characteristics, private val inventoryManager: HeroInventoryManager) : Character(myName, myCharacteristics, ObjectType.Player) {
-//
-//    fun canPickUp(): Boolean = inventoryManager.isNotFull()
-//
-//    fun takeItem(item: Item) {
-//        inventoryManager.takeItem(item)
-//    }
-//
-//    fun itemDamage() = inventoryManager.getActiveItemDamage()
-//
-//    fun switchActiveItem() {
-//        inventoryManager.switchActiveItem()
-//    }
-//
-//    fun resetInventory() {
-//        inventoryManager.dropAll()
-//    }
-//
-//}
-
-class Player(val myName: String, myCharacteristics: Characteristics) : GameCharacter(myName, myCharacteristics, ObjectType.Player)
+class Player(val myName: String, myCharacteristics: Characteristics) : GameCharacter(myName, myCharacteristics)
 
 
 @Serializable
-open class GameCharacter(val name: String, private val characteristics: Characteristics, private val tp: ObjectType) : GameObject(tp) {
+open class GameCharacter(val name: String, private val characteristics: Characteristics) : GameObject() {
     var direction: Direction = Direction.Down
 
     fun takeDamage(damage: Int) {

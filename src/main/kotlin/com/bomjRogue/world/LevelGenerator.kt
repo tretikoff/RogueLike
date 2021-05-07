@@ -1,7 +1,9 @@
 package com.bomjRogue.world
 
-import com.bomjRogue.config.SettingsManager.Companion.defaultDamageValue
-import com.bomjRogue.config.SettingsManager.Companion.defaultHealthBoost
+import com.bomjRogue.config.SettingsManager.defaultDamageValue
+import com.bomjRogue.config.SettingsManager.defaultHealthBoost
+import com.bomjRogue.config.ConfigManager.width
+import com.bomjRogue.config.ConfigManager.height
 import com.bomjRogue.world.interactive.Health
 import com.bomjRogue.world.interactive.Item
 import com.bomjRogue.world.interactive.Sword
@@ -9,7 +11,10 @@ import com.bomjRogue.world.interactive.Sword
 class LevelGenerator {
     companion object {
         fun generateMap(): Map {
-            return Map(MazeGenerator(13, 7).getMaze(), 720f, 1280f)
+            var mazeStep = 98f
+            var mazeWidth = (width / mazeStep).toInt()
+            var mazeHeight = (height / mazeStep).toInt()
+            return Map(MazeGenerator(mazeWidth, mazeHeight).getMaze(), height, width)
         }
 
         fun generateSwordItem(damage: Int = defaultDamageValue) : Item = Sword(damage)
