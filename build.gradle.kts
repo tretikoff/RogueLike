@@ -5,12 +5,8 @@ plugins {
     id("application")
     id("org.jetbrains.kotlin.jvm") version "1.4.30"
     kotlin("plugin.serialization") version "1.4.30"
-    id("org.openjfx.javafxplugin") version "0.0.8"
 }
 
-javafx {
-    modules("javafx.controls", "javafx.fxml")
-}
 
 group = "me.professional"
 version = "1.0-SNAPSHOT"
@@ -28,8 +24,8 @@ repositories {
     mavenLocal()
     jcenter()
     google()
-    maven(url= "https://oss.sonatype.org/content/groups/public")
-    maven(url ="https://jitpack.io")
+    maven(url = "https://oss.sonatype.org/content/groups/public")
+    maven(url = "https://jitpack.io")
 }
 
 
@@ -59,6 +55,18 @@ val jar by tasks.getting(Jar::class) {
     manifest {
         attributes["Main-Class"] = "com.bomjRogue.Server"
     }
+}
+
+val server = task("server", type = JavaExec::class) {
+    main = "com.bomjRogue.Server"
+    classpath = sourceSets["main"].runtimeClasspath
+    args = listOf("127.0.0.1", "8084")
+}
+
+val client = task("client", type = JavaExec::class) {
+    main = "com.bomjRogue.Client"
+    classpath = sourceSets["main"].runtimeClasspath
+    args = listOf("127.0.0.1", "8084")
 }
 
 val fatJar = task("fatJar", type = Jar::class) {

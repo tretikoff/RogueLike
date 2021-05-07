@@ -2,7 +2,6 @@
 package com.bomjRogue
 
 import com.bomjRogue.character.Player
-import com.bomjRogue.config.ConnectionManager
 import com.bomjRogue.game.Game
 import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
@@ -39,9 +38,9 @@ data class MapUpdate(val items: MutableMap<String, Position>) : Update(UpdateTyp
 data class PlayerUpdate(val player: Player) : Update(UpdateType.PlayerUpdate)
 data class MusicUpdate(val soundName: String) : Update(UpdateType.MusicPlay)
 
-fun main() {
+fun main(args: Array<String>) {
     val gson = GsonBuilder().enableComplexMapKeySerialization().setPrettyPrinting().create()
-    embeddedServer(Netty, host = ConnectionManager.host, port = ConnectionManager.port) {
+    embeddedServer(Netty, host = args[0], port = args[1].toInt()) {
         val game = Game()
 
         install(WebSockets)

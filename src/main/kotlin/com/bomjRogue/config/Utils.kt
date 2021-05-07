@@ -25,11 +25,6 @@ object SettingsManager {
     val defaultSword = Sword(defaultDamageValue)
 }
 
-object ConnectionManager {
-    const val host = "127.0.0.1"
-    const val port = 8084
-}
-
 object ConfigManager {
     const val width = 1280f
     const val height = 720f

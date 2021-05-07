@@ -11,7 +11,6 @@ import com.badlogic.gdx.utils.Pools
 import com.bomjRogue.*
 import com.bomjRogue.character.GameCharacter
 import com.bomjRogue.config.ConfigManager
-import com.bomjRogue.config.ConnectionManager
 import com.bomjRogue.config.Utils.swordHitSoundName
 import com.bomjRogue.game.command.DeathCommand
 import com.bomjRogue.game.command.HitCommand
@@ -37,7 +36,7 @@ import ktx.app.clearScreen
 import ktx.graphics.use
 import java.util.*
 
-class GameClient : KtxApplicationAdapter {
+class GameClient(private val gameHost: String, private val gamePort: Int) : KtxApplicationAdapter {
     private lateinit var renderer: ShapeRenderer
     private lateinit var spriteBatch: SpriteBatch
     private var textLayout = Pools.obtain(GlyphLayout::class.java)!!
@@ -53,8 +52,8 @@ class GameClient : KtxApplicationAdapter {
         install(JsonFeature)
         install(WebSockets)
         defaultRequest {
-            host = ConnectionManager.host
-            port = ConnectionManager.port
+            host = gameHost
+            port = gamePort
         }
     }
 
